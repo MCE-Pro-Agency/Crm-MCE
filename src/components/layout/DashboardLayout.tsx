@@ -70,6 +70,13 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
       navigate("/");
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
+          {/* DEBUG: Affichage du rôle et de l'ID utilisateur */}
+          {!collapsed && profile && (
+            <div className="mt-2 text-xs text-red-600 font-mono">
+              <div>role: <b>{profile.role ?? "(aucun)"}</b></div>
+              <div>id: <b>{profile.id}</b></div>
+            </div>
+          )}
     }
   };
 

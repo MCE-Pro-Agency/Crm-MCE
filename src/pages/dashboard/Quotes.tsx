@@ -26,14 +26,12 @@ import {
   Plus,
   Search,
   MoreHorizontal,
-  Pencil,
   Trash2,
   FileText,
   Eye,
   Send,
   Download,
   X,
-  Loader2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -84,55 +82,11 @@ interface Quote {
   created_by?: string;
 }
 
-// Mock data pour démarrer
-const mockQuotes: Quote[] = [
-  {
-    id: "1",
-    number: "S00977",
-    client_name: "MCE Senegal, Client test numero1",
-    client_id: "1",
-    created_at: "2025-03-16 11:00",
-    expiration_date: "2025-04-16",
-    status: "envoye",
-    total_amount: 0,
-    tax_amount: 0,
-    amount_excluding_tax: 0,
-    salesperson_name: "MCE",
-    website_url: "www.mceclient1.com",
-  },
-  {
-    id: "2",
-    number: "S00414",
-    client_name: "Mame Fatou Wade Wade",
-    client_id: "2",
-    created_at: "2025-12-15 09:30",
-    expiration_date: "2026-01-15",
-    status: "accepte",
-    total_amount: 4875,
-    tax_amount: 0,
-    amount_excluding_tax: 4875,
-    salesperson_name: "MCE",
-    website_url: "www.madefatouwade.com",
-  },
-  {
-    id: "3",
-    number: "S00358",
-    client_name: "DFRTGY GYBH",
-    client_id: "3",
-    created_at: "2025-12-14 19:39",
-    expiration_date: "2026-01-14",
-    status: "accepte",
-    total_amount: 24875,
-    tax_amount: 0,
-    amount_excluding_tax: 24875,
-    salesperson_name: "MCE",
-  },
-];
-
 const Quotes = () => {
-  const [quotes, setQuotes] = useState<Quote[]>(mockQuotes);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [search, setSearch] = useState("");
+  const [countryFilter, setCountryFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showNewQuoteDialog, setShowNewQuoteDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -141,6 +95,7 @@ const Quotes = () => {
     client_name: "",
     expiration_date: "",
     status: "draft" as QuoteStatus,
+    country: "",
   });
   const [newItem, setNewItem] = useState({
     product_name: "",
@@ -149,38 +104,88 @@ const Quotes = () => {
     tax_rate: 0,
   });
 
-  // Filtrer les devis
-  const filteredQuotes = quotes.filter((quote) =>
-    quote.number.toLowerCase().includes(search.toLowerCase()) ||
-    quote.client_name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Charger les devis depuis Supabase au chargement du composant ou lors du filtrage pays
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      setIsLoading(true);
+      let query = supabase.from("quotes").select("*").order("created_at", { ascending: false });
+      if (countryFilter) {
+        query = query.eq("country", countryFilter);
+      }
+      const { data, error } = await query;
+      if (error) {
+        toast.error("Erreur lors du chargement des devis");
+      } else {
+        setQuotes(data || []);
+      }
+      setIsLoading(false);
+    };
+    fetchQuotes();
+  }, [countryFilter]);
 
-  // Créer un nouveau devis
-  const handleCreateQuote = () => {
+  // Filtrer les devis par recherche texte
+  const filteredQuotes = quotes.filter((quote) => {
+    const matchesSearch =
+      quote.number.toLowerCase().includes(search.toLowerCase()) ||
+      quote.client_name.toLowerCase().includes(search.toLowerCase());
+    return matchesSearch;
+  });
+
+  // Créer un nouveau devis (Supabase)
+  const handleCreateQuote = async () => {
     if (!newQuote.number || !newQuote.client_name) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
 
-    const quote: Quote = {
-      id: Math.random().toString(),
+    const quoteToInsert = {
       number: newQuote.number,
       client_name: newQuote.client_name,
       client_id: Math.random().toString(),
-      created_at: new Date().toLocaleString("fr-FR"),
+      created_at: new Date().toISOString(),
       expiration_date: newQuote.expiration_date,
       status: newQuote.status,
       total_amount: 0,
       tax_amount: 0,
       amount_excluding_tax: 0,
-      items: [],
+      salesperson_name: "MCE",
+      website_url: "",
     };
 
-    setQuotes([quote, ...quotes]);
-    setSelectedQuote(quote);
-    setShowNewQuoteDialog(false);
-    setNewQuote({ number: "", client_name: "", expiration_date: "", status: "draft" });
-    toast.success("Devis créé avec succès");
+    setIsLoading(true);
+    const { data, error } = await supabase.from("quotes").insert([quoteToInsert]).select();
+    setIsLoading(false);
+    if (error) {
+      toast.error("Erreur lors de la création du devis");
+      return;
+    }
+    if (data && data[0]) {
+      setQuotes([data[0], ...quotes]);
+      setSelectedQuote(data[0]);
+      setShowNewQuoteDialog(false);
+      setNewQuote({ number: "", client_name: "", expiration_date: "", status: "draft", country: "" });
+      toast.success("Devis créé avec succès");
+    }
+  };
+
+  // Modifier un devis (Supabase)
+  const handleUpdateQuote = async (updatedQuote: Quote) => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from("quotes")
+      .update(updatedQuote)
+      .eq("id", updatedQuote.id)
+      .select();
+    setIsLoading(false);
+    if (error) {
+      toast.error("Erreur lors de la modification du devis");
+      return;
+    }
+    if (data && data[0]) {
+      setQuotes(quotes.map((q) => (q.id === updatedQuote.id ? data[0] : q)));
+      setSelectedQuote(data[0]);
+      toast.success("Devis modifié avec succès");
+    }
   };
 
   // Ajouter un article au devis
@@ -247,10 +252,16 @@ const Quotes = () => {
     toast.success("Article supprimé");
   };
 
-  // Supprimer un devis
-  const handleDeleteQuote = () => {
+  // Supprimer un devis (Supabase)
+  const handleDeleteQuote = async () => {
     if (!selectedQuote) return;
-
+    setIsLoading(true);
+    const { error } = await supabase.from("quotes").delete().eq("id", selectedQuote.id);
+    setIsLoading(false);
+    if (error) {
+      toast.error("Erreur lors de la suppression du devis");
+      return;
+    }
     setQuotes(quotes.filter((q) => q.id !== selectedQuote.id));
     setSelectedQuote(null);
     setShowDeleteDialog(false);
@@ -455,14 +466,21 @@ const Quotes = () => {
           </div>
 
           {/* BARRE DE RECHERCHE */}
-          <div className="bg-white border rounded-lg p-4 mb-6">
-            <div className="relative">
+          <div className="bg-white border rounded-lg p-4 mb-6 flex gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Rechercher par numéro ou client..."
                 className="pl-8"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <Input
+                placeholder="Filtrer par pays..."
+                value={countryFilter}
+                onChange={(e) => setCountryFilter(e.target.value)}
               />
             </div>
           </div>
@@ -496,6 +514,15 @@ const Quotes = () => {
                   <Button variant="outline" size="sm" className="gap-2">
                     <Send className="w-4 h-4" />
                     Envoyer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => handleUpdateQuote(selectedQuote)}
+                    disabled={isLoading}
+                  >
+                    Sauvegarder
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -570,7 +597,9 @@ const Quotes = () => {
                     </div>
                     <div>
                       <Label className="font-semibold">Vendeur</Label>
-                      <p className="text-sm mt-1">{selectedQuote.salesperson_name || "MCE"}</p>
+                      <p className="text-sm mt-1">
+                        {selectedQuote.salesperson_name || "MCE"}
+                      </p>
                     </div>
                   </div>
 
@@ -710,7 +739,7 @@ const Quotes = () => {
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span>TVA 0%:</span>
+                        <span>TVA:</span>
                         <span className="font-semibold">
                           {selectedQuote.tax_amount.toLocaleString("fr-FR")} CFA
                         </span>

@@ -79,7 +79,7 @@ interface Employee {
   contract_type?: string;
   salary?: number;
   notes?: string;
-  job_description?: string;
+  job_description_file?: string; // chemin ou nom du fichier uploadé
   contract_file?: string;
   cv_file?: string;
   documents?: EmployeeDocument[];
@@ -100,7 +100,7 @@ const mockEmployees: Employee[] = [
     hire_date: "2024-01-15",
     contract_type: "CDI",
     salary: 450000,
-    job_description: "Création graphique, design de logos, charte graphique",
+    job_description_file: "",
     documents: [],
     salary_slips: [],
   },
@@ -117,7 +117,7 @@ const mockEmployees: Employee[] = [
     hire_date: "2023-06-20",
     contract_type: "CDI",
     salary: 550000,
-    job_description: "Développement web et mobile, gestion de projets tech",
+    job_description_file: "",
     documents: [],
     salary_slips: [],
   },
@@ -134,7 +134,7 @@ const mockEmployees: Employee[] = [
     hire_date: "2024-03-10",
     contract_type: "CDD",
     salary: 350000,
-    job_description: "Gestion des réseaux sociaux, création de contenu",
+    job_description_file: "",
     documents: [],
     salary_slips: [],
   },
@@ -179,7 +179,7 @@ const Recruitment = () => {
     salary: 0,
     notes: "",
     photo: "",
-    job_description: "",
+    job_description_file: "",
   });
 
   const filteredEmployees = employees.filter((emp) =>
@@ -552,17 +552,25 @@ const Recruitment = () => {
                   </div>
                 </div>
 
-                {/* DESCRIPTIONS */}
+                {/* UPLOAD FICHE DE POSTE */}
                 <div>
-                  <Label>Fiche de poste</Label>
-                  <Textarea
-                    placeholder="Description du poste..."
-                    value={formData.job_description || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, job_description: e.target.value })
-                    }
-                    rows={3}
+                  <Label>Fiche de poste (PDF, Word...)</Label>
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.odt,.txt"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setFormData({ ...formData, job_description_file: file.name });
+                        toast.success("Fichier sélectionné : " + file.name);
+                      }
+                    }}
                   />
+                  {formData.job_description_file && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Fichier sélectionné : {formData.job_description_file}
+                    </div>
+                  )}
                 </div>
 
                 {/* NOTES */}
@@ -782,10 +790,13 @@ const Recruitment = () => {
 
                   {/* FICHE DE POSTE */}
                   <TabsContent value="fiche" className="space-y-4 mt-4">
-                    <div className="border p-4 rounded bg-slate-50">
-                      <p className="text-sm whitespace-pre-wrap">
-                        {selectedEmployee.job_description || "Aucune fiche de poste enregistrée"}
-                      </p>
+                    <div className="border p-4 rounded bg-slate-50 flex items-center gap-4">
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                      {selectedEmployee.job_description_file ? (
+                        <span className="text-sm">{selectedEmployee.job_description_file}</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Aucune fiche de poste uploadée</span>
+                      )}
                     </div>
                   </TabsContent>
 
