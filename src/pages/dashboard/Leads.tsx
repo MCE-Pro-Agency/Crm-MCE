@@ -296,7 +296,7 @@ const Leads = () => {
             <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm w-full sm:w-auto order-2 sm:order-1">
               <History className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
             </Button>
-            <Button onClick={() => handleOpenModal(null, true)} className="gap-2 bg-teal-600 hover:bg-teal-700 text-xs sm:text-sm w-full sm:w-auto order-1 sm:order-2">
+            <Button onClick={() => handleOpenModal(null, true)} className="gap-2 bg-primary hover:bg-primary/90 text-xs sm:text-sm w-full sm:w-auto order-1 sm:order-2">
               <Plus className="w-4 h-4" /> Nouveau lead
             </Button>
           </div>
