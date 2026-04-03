@@ -18,36 +18,49 @@ const statusConfig = {
   rappeler: { label: "À rappeler", className: "bg-muted text-muted-foreground border-muted" },
 };
 
-// Données de démonstration
+
+  
+ // Données de démonstration
 const projects: ShowcaseProject[] = [
   {
     id: "1",
-    name: "E-commerce Mode",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80",
-    url: "https://example.com",
+
+    name: "Teranga-express",
+    image: "public/Lovable App - Google Chrome 03-04-26 01_59_50.png",
+    url: "https://teranga-express.com/",
+
+  
+
     status: "realise",
   },
   {
     id: "2",
-    name: "Restaurant Dakar",
-    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
-    url: "https://example.com",
+
+    name: "panafricacreperie",
+    image: "public/Lovable App - Google Chrome 03-04-26 02_00_50.png",
+    url: "https://panafricacreperie.com/",
+
+   
+
     status: "realise",
   },
   {
     id: "3",
-    name: "Startup Tech",
-    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-    url: "https://example.com",
-    status: "en_cours",
+
+    name: "lehainnov",
+    image: "public/Lovable App - Google Chrome 03-04-26 02_01_57.png",
+    url: "https://lehainnov.com/",
+    status: "realise",
   },
   {
     id: "4",
-    name: "Cabinet Avocat",
-    image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80",
-    url: "https://example.com",
-    status: "a_venir",
+    name: "AMANYA",
+    image: "public/Lovable App - Google Chrome 03-04-26 02_02_34.png",
+    url: "https://moda-sn.com/",
+    status: "realise",
+
   },
+  
 ];
 
 export const Showcase = () => {
