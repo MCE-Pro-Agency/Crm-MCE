@@ -19,12 +19,6 @@ export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
-    product: [
-      { label: "Tableau de bord", href: "/dashboard" },
-      { label: "Leads", href: "/dashboard/leads" },
-      { label: "Clients", href: "/dashboard/clients" },
-      { label: "Projets", href: "/dashboard/projects" },
-    ],
     company: [
       { label: "À propos", href: "#about" },
       { label: "Blog", href: "#blog" },
@@ -45,15 +39,22 @@ export const Footer = () => {
     { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
   ];
 
+  const products = [
+    { label: "Tableau de bord" },
+    { label: "Leads" },
+    { label: "Clients" },
+    { label: "Projets" },
+  ];
+
   return (
-    <footer className="bg-slate-950/95 backdrop-blur-xl border-t border-primary/20 text-white">
+    <footer className="relative bg-slate-950/95 backdrop-blur-xl border-t border-primary/20 text-white">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00AEEF] via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
                 <MCELogoFooter size={28} />
               </div>
               <div>
@@ -67,33 +68,28 @@ export const Footer = () => {
             
             {/* Contact Info */}
             <div className="space-y-3">
-              <div className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors">
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <div className="flex items-center gap-3 text-sm text-slate-400 hover:text-[#00AEEF] transition-colors">
+                <MapPin className="w-4 h-4 text-[#00AEEF] flex-shrink-0" />
                 <span>Dakar, Plateau - Sénégal</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors">
-                <Phone className="w-4 h-4 text-primary flex-shrink-0" />
+              <div className="flex items-center gap-3 text-sm text-slate-400 hover:text-[#00AEEF] transition-colors">
+                <Phone className="w-4 h-4 text-[#00AEEF] flex-shrink-0" />
                 <a href="tel:+221770000000">+221 77 000 00 00</a>
               </div>
-              <div className="flex items-center gap-3 text-sm text-slate-400 hover:text-primary transition-colors">
-                <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+              <div className="flex items-center gap-3 text-sm text-slate-400 hover:text-[#00AEEF] transition-colors">
+                <Mail className="w-4 h-4 text-[#00AEEF] flex-shrink-0" />
                 <a href="mailto:contact@mceagency.sn">contact@mceagency.sn</a>
               </div>
             </div>
           </div>
 
-          {/* Product Links */}
+          {/* Product Section - NO LINKS */}
           <div>
             <h4 className="text-sm font-bold uppercase tracking-wider mb-4 text-white">Produit</h4>
             <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-sm text-slate-400 hover:text-primary transition-colors duration-200"
-                  >
-                    {link.label}
-                  </Link>
+              {products.map((product, idx) => (
+                <li key={idx} className="text-sm text-slate-400">
+                  {product.label}
                 </li>
               ))}
             </ul>
@@ -107,7 +103,7 @@ export const Footer = () => {
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="text-sm text-slate-400 hover:text-primary transition-colors duration-200"
+                    className="text-sm text-slate-400 hover:text-[#00AEEF] transition-colors duration-200"
                   >
                     {link.label}
                   </a>
@@ -124,7 +120,7 @@ export const Footer = () => {
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="text-sm text-slate-400 hover:text-primary transition-colors duration-200"
+                    className="text-sm text-slate-400 hover:text-[#00AEEF] transition-colors duration-200"
                   >
                     {link.label}
                   </a>
@@ -156,7 +152,7 @@ export const Footer = () => {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-slate-800/50 text-slate-400 hover:bg-primary hover:text-white transition-all duration-200"
+                  className="p-2 rounded-lg bg-slate-800/50 text-slate-400 hover:bg-[#00AEEF] hover:text-white transition-all duration-200"
                   title={social.label}
                   aria-label={social.label}
                 >
@@ -176,7 +172,7 @@ export const Footer = () => {
 
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-20" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#00AEEF]/5 rounded-full blur-3xl opacity-20" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl opacity-20" />
       </div>
     </footer>
