@@ -171,6 +171,39 @@ const Register = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Assure que l'email est bien stocké dans profiles pour les écrans
+        // qui listent les utilisateurs depuis cette table.
+        const baseProfile = {
+          id: data.user.id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          role: formData.role,
+        };
+
+        let profileSyncError: any = null;
+
+        const withEmail = await supabase
+          .from("profiles")
+          .upsert({ ...baseProfile, email: formData.email }, { onConflict: "id" });
+
+        if (withEmail.error) {
+          const withUserEmail = await supabase
+            .from("profiles")
+            .upsert({ ...baseProfile, user_email: formData.email }, { onConflict: "id" });
+
+          if (withUserEmail.error) {
+            const fallback = await supabase
+              .from("profiles")
+              .upsert(baseProfile, { onConflict: "id" });
+            profileSyncError = fallback.error;
+          }
+        }
+
+        if (profileSyncError) {
+          toast.warning("Compte créé, mais synchronisation profil partielle.");
+        }
+
         toast.success("Inscription réussie !");
         // Redirection directe vers le dashboard car confirmation désactivée
         navigate("/dashboard");

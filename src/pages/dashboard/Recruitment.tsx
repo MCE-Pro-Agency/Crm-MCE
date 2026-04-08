@@ -95,6 +95,17 @@ interface Employee {
   emergency_phone?: string;
 }
 
+interface ProfileOption {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  country: string | null;
+  avatar_url: string | null;
+}
+
 // ─── Données statiques ────────────────────────────────────────────────────────
 
 const countries = [
@@ -138,6 +149,8 @@ const generateId = () =>
 
 const Recruitment = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [search, setSearch] = useState("");
@@ -181,21 +194,45 @@ const Recruitment = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("recruited_employees")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) {
-        toast.error("Erreur lors du chargement des salariés : " + error.message);
+      const [employeesRes, profilesRes] = await Promise.all([
+        supabase
+          .from("recruited_employees")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("*")
+          .order("first_name", { ascending: true }),
+      ]);
+
+      if (employeesRes.error) {
+        toast.error("Erreur lors du chargement des salariés : " + employeesRes.error.message);
       } else {
         // Normaliser documents et salary_slips qui peuvent être null en base
-        const normalized = (data || []).map((emp) => ({
+        const normalized = (employeesRes.data || []).map((emp) => ({
           ...emp,
           documents: Array.isArray(emp.documents) ? emp.documents : [],
           salary_slips: Array.isArray(emp.salary_slips) ? emp.salary_slips : [],
         }));
         setEmployees(normalized);
       }
+
+      if (profilesRes.error) {
+        toast.error("Erreur lors du chargement des profils : " + profilesRes.error.message);
+      } else {
+        const mappedProfiles: ProfileOption[] = (profilesRes.data || []).map((p: any) => ({
+          id: p.id,
+          first_name: p.first_name ?? null,
+          last_name: p.last_name ?? null,
+          email: p.email ?? p.user_email ?? p.email_address ?? null,
+          phone: p.phone ?? null,
+          role: p.role ?? null,
+          country: p.country ?? p.pays ?? null,
+          avatar_url: p.avatar_url ?? null,
+        }));
+        setProfiles(mappedProfiles);
+      }
+
       setLoading(false);
     };
     fetchEmployees();
@@ -211,6 +248,7 @@ const Recruitment = () => {
   // ── Ouvrir le dialog pour un nouveau salarié ───────────────────────────────
   const handleOpenNewDialog = () => {
     setEditingEmployee(null);
+    setSelectedProfileId("");
     setFormData({
       first_name: "",
       last_name: "",
@@ -237,9 +275,30 @@ const Recruitment = () => {
   // ── Ouvrir le dialog pour modifier ────────────────────────────────────────
   const handleEditEmployee = (emp: Employee) => {
     setEditingEmployee(emp);
+    setSelectedProfileId("");
     setFormData(emp);
     setPhotoPreview(emp.photo || "");
     setShowNewEmployeeDialog(true);
+  };
+
+  const handleSelectProfile = (profileId: string) => {
+    setSelectedProfileId(profileId);
+    if (!profileId || profileId === "manual") return;
+
+    const profile = profiles.find((p) => p.id === profileId);
+    if (!profile) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      first_name: profile.first_name || "",
+      last_name: profile.last_name || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+      role: profile.role || "",
+      country: profile.country || "",
+      photo: profile.avatar_url || "",
+    }));
+    setPhotoPreview(profile.avatar_url || "");
   };
 
   // ── Upload photo (base64) ──────────────────────────────────────────────────
@@ -505,6 +564,8 @@ const Recruitment = () => {
     });
   };
 
+  const isProfileSelected = !editingEmployee && !!selectedProfileId && selectedProfileId !== "manual";
+
   // ─── Rendu ─────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout>
@@ -534,6 +595,25 @@ const Recruitment = () => {
               </DialogHeader>
 
               <div className="space-y-4">
+                {!editingEmployee && (
+                  <div>
+                    <Label>Sélectionner un utilisateur existant</Label>
+                    <Select value={selectedProfileId} onValueChange={handleSelectProfile}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir un profil (ou saisie manuelle)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Saisie manuelle</SelectItem>
+                        {profiles.map((profile) => (
+                          <SelectItem key={profile.id} value={profile.id}>
+                            {`${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.email || "Utilisateur"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 {/* PHOTO UPLOAD */}
                 <div className="flex flex-col items-center gap-4">
                   <Avatar className="w-20 h-20">
@@ -543,7 +623,7 @@ const Recruitment = () => {
                       {formData.last_name?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button variant="outline" size="sm" className="gap-2" disabled={isProfileSelected}>
                     <Upload className="w-4 h-4" />
                     <label className="cursor-pointer">
                       Importer une photo
@@ -551,10 +631,14 @@ const Recruitment = () => {
                         type="file"
                         accept="image/*"
                         onChange={handlePhotoUpload}
+                        disabled={isProfileSelected}
                         className="hidden"
                       />
                     </label>
                   </Button>
+                  {isProfileSelected && (
+                    <p className="text-xs text-muted-foreground">Photo verrouillée (profil existant sélectionné)</p>
+                  )}
                 </div>
 
                 {/* INFORMATIONS PERSONNELLES */}
@@ -564,6 +648,7 @@ const Recruitment = () => {
                     <Input
                       placeholder="Prénom"
                       value={formData.first_name || ""}
+                      readOnly={isProfileSelected}
                       onChange={(e) =>
                         setFormData({ ...formData, first_name: e.target.value })
                       }
@@ -574,6 +659,7 @@ const Recruitment = () => {
                     <Input
                       placeholder="Nom"
                       value={formData.last_name || ""}
+                      readOnly={isProfileSelected}
                       onChange={(e) =>
                         setFormData({ ...formData, last_name: e.target.value })
                       }
@@ -585,6 +671,7 @@ const Recruitment = () => {
                       type="email"
                       placeholder="email@agence.com"
                       value={formData.email || ""}
+                      readOnly={isProfileSelected}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
@@ -595,6 +682,7 @@ const Recruitment = () => {
                     <Input
                       placeholder="+221771234567"
                       value={formData.phone || ""}
+                      readOnly={isProfileSelected}
                       onChange={(e) =>
                         setFormData({ ...formData, phone: e.target.value })
                       }
@@ -605,6 +693,7 @@ const Recruitment = () => {
                     <Input
                       placeholder="Ex: Développeur"
                       value={formData.role || ""}
+                      readOnly={isProfileSelected}
                       onChange={(e) =>
                         setFormData({ ...formData, role: e.target.value })
                       }
@@ -614,6 +703,7 @@ const Recruitment = () => {
                     <Label>Pays *</Label>
                     <Select
                       value={formData.country || ""}
+                      disabled={isProfileSelected}
                       onValueChange={(value) =>
                         setFormData({ ...formData, country: value })
                       }
