@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    /* Agency CRM - Professional & Warm */
+    /* MCE Agency - Professional & Modern Blue */
     --background: 210 20% 98%;
     --foreground: 222 47% 11%;
 
@@ -16,18 +16,19 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Teal primary - Professional trust */
-    --primary: 173 58% 39%;
+    /* ✅ MCE Primary - Bright Blue */
+    --primary: 193 100% 47%;
     --primary-foreground: 0 0% 100%;
 
-    /* Warm coral accent */
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* MCE Secondary - Deep Blue */
+    --secondary: 205 89% 37%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 210 20% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 16 85% 57%;
+    /* MCE Accent - Cyan */
+    --accent: 187 100% 42%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -39,30 +40,30 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 199 89% 48%;
+    --info: 193 100% 47%;
     --info-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 173 58% 39%;
+    --ring: 193 100% 47%;
 
     --radius: 0.75rem;
 
-    /* Sidebar - Dark professional */
+    /* ✅ Sidebar - Dark with MCE Blue accent */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 173 58% 45%;
+    --sidebar-primary: 193 100% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 35% 18%;
     --sidebar-accent-foreground: 210 20% 98%;
     --sidebar-border: 222 35% 20%;
-    --sidebar-ring: 173 58% 45%;
+    --sidebar-ring: 193 100% 47%;
     --sidebar-muted: 215 16% 60%;
 
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(173 58% 39%), hsl(173 58% 30%));
-    --gradient-accent: linear-gradient(135deg, hsl(16 85% 57%), hsl(25 95% 53%));
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 35% 18%) 50%, hsl(173 58% 25%) 100%);
+    /* ✅ Custom gradients - MCE Blue */
+    --gradient-primary: linear-gradient(135deg, hsl(193 100% 47%), hsl(205 89% 37%));
+    --gradient-accent: linear-gradient(135deg, hsl(187 100% 42%), hsl(193 100% 47%));
+    --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 35% 18%) 50%, hsl(205 89% 37%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
     
     /* Shadows */
@@ -70,7 +71,7 @@
     --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.1);
-    --shadow-glow: 0 0 20px hsl(173 58% 39% / 0.3);
+    --shadow-glow: 0 0 20px hsl(193 100% 47% / 0.3);
   }
 
   .dark {
@@ -83,16 +84,16 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 173 58% 45%;
+    --primary: 193 100% 47%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 35% 18%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 205 89% 37%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 222 35% 18%;
     --muted-foreground: 215 16% 60%;
 
-    --accent: 16 85% 57%;
+    --accent: 187 100% 42%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 30%;
@@ -100,16 +101,16 @@
 
     --border: 222 35% 20%;
     --input: 222 35% 20%;
-    --ring: 173 58% 45%;
+    --ring: 193 100% 47%;
 
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 173 58% 45%;
+    --sidebar-primary: 193 100% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 35% 15%;
     --sidebar-accent-foreground: 210 20% 98%;
     --sidebar-border: 222 35% 15%;
-    --sidebar-ring: 173 58% 45%;
+    --sidebar-ring: 193 100% 47%;
   }
 }
 
@@ -167,8 +168,8 @@
   .hero-section::before {
     content: '';
     @apply absolute inset-0;
-    background: radial-gradient(circle at 30% 20%, hsl(173 58% 39% / 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 70% 80%, hsl(16 85% 57% / 0.1) 0%, transparent 50%);
+    background: radial-gradient(circle at 30% 20%, hsl(193 100% 47% / 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, hsl(187 100% 42% / 0.1) 0%, transparent 50%);
   }
 
   .sidebar-nav-item {
