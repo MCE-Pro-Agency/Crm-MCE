@@ -293,6 +293,10 @@ const Recruitment = () => {
       toast.success("Salarié mis à jour avec succès");
     } else {
       // CREATE
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const insertData = {
         ...formData,
         photo:
@@ -301,7 +305,7 @@ const Recruitment = () => {
         documents: [],
         salary_slips: [],
         created_at: new Date().toISOString(),
-        created_by: "system",
+        created_by: user?.id ?? null,
       };
       const { data, error } = await supabase
         .from("recruited_employees")
