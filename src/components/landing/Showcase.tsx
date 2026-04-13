@@ -26,7 +26,7 @@ const projects: ShowcaseProject[] = [
     id: "1",
 
     name: "Teranga-express",
-    image: "public/images/dashboard-1.png",
+    image: "/images/dashboard-1.png",
     url: "https://teranga-express.com/",
 
   
@@ -37,7 +37,7 @@ const projects: ShowcaseProject[] = [
     id: "2",
 
     name: "panafricacreperie",
-    image: "public/images/dashboard-2.png",
+    image: "/images/dashboard-2.png",
     url: "https://panafricacreperie.com/",
 
    
@@ -48,14 +48,14 @@ const projects: ShowcaseProject[] = [
     id: "3",
 
     name: "lehainnov",
-    image: "public/images/dashboard-3.png",
+    image: "/images/dashboard-3.png",
     url: "https://lehainnov.com/",
     status: "realise",
   },
   {
     id: "4",
     name: "AMANYA",
-    image: "public/images/dashboard-4.png",
+    image: "/images/dashboard-4.png",
     url: "https://moda-sn.com/",
     status: "realise",
 
