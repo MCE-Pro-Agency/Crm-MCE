@@ -149,7 +149,7 @@ const Login = () => {
         },
       });
 
-      // Prefetch les projets (optionnel mais rapide)
+      // Prefetch les projets
       await queryClient.prefetchQuery({
         queryKey: ["projects"],
         queryFn: async () => {
@@ -225,11 +225,22 @@ const Login = () => {
 
         toast.success("Content de vous revoir !");
 
-        // ✅ PREFETCH les données AVANT de rediriger
-        // Ça va charger tout en arrière-plan pendant que l'utilisateur attend
-        await prefetchDashboardData(data.user.id);
+        // ✅ Prefetch avec timeout de sécurité (3 secondes max)
+        const timeoutPromise = new Promise<void>((resolve) => {
+          setTimeout(() => {
+            console.warn("Prefetch timeout - redirection quand même");
+            resolve();
+          }, 3000);
+        });
 
-        // Puis redirection (les données sont déjà en cache!)
+        await Promise.race([
+          prefetchDashboardData(data.user.id),
+          timeoutPromise
+        ]).catch((err) => {
+          console.warn("Prefetch error (ignoré):", err);
+        });
+
+        // Redirection vers dashboard
         navigate("/dashboard");
       }
     } catch (error: any) {
