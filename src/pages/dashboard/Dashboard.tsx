@@ -67,77 +67,97 @@ const Dashboard = () => {
   const [data, setData] = useState<DashboardState | null>(dashboardCache?.data || null);
   const [loading, setLoading] = useState(!dashboardCache?.data);
 
-  // 🚀 Fonction de fetch mémorisée avec cache
-  const fetchDashboardData = useCallback(async (force = false) => {
-    // Vérifier le cache
-    if (!force && dashboardCache && Date.now() - dashboardCache.timestamp < CACHE_DURATION) {
-      console.log("📦 Utilisation du cache");
-      setData(dashboardCache.data);
+ // 🚀 Fonction de fetch mémorisée avec cache et timeout
+const fetchDashboardData = useCallback(async (force = false) => {
+  // Vérifier le cache
+  if (!force && dashboardCache && Date.now() - dashboardCache.timestamp < CACHE_DURATION) {
+    console.log("📦 Utilisation du cache");
+    setData(dashboardCache.data);
+    setLoading(false);
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // ✅ Timeout de 10 secondes pour éviter le blocage infini
+    const fetchPromise = Promise.all([
+      supabase.from('dashboard_stats').select('*').single(),
+      supabase.from('recent_activity').select('id, type, message, created_at').limit(6).order('created_at', { ascending: false }),
+      supabase.from('projects')
+        .select('name, deadline')
+        .eq('status', 'en_cours')
+        .not('deadline', 'is', null)
+        .order('deadline', { ascending: true }),
+      supabase.from('clients').select('country')
+    ]);
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Dashboard timeout')), 10000)
+    );
+
+    const [statsRes, activityRes, projectsRes, countryRes] = await Promise.race([
+      fetchPromise,
+      timeoutPromise
+    ]) as any;
+
+    const today = new Date();
+    const next3 = new Date();
+    next3.setDate(today.getDate() + 3);
+    const next7 = new Date();
+    next7.setDate(today.getDate() + 7);
+
+    const categorized = (projectsRes.data || [])
+      .filter((p: any) => new Date(p.deadline) <= next7)
+      .map((p: any) => {
+        const deadline = new Date(p.deadline);
+        let level = "soon";
+        if (deadline < today) level = "overdue";
+        else if (deadline <= next3) level = "urgent";
+        return { ...p, level };
+      });
+
+    const countryCounts = (countryRes.data || []).reduce((acc: any, curr: any) => {
+      const country = curr.country || "Non défini";
+      acc[country] = (acc[country] || 0) + 1;
+      return acc;
+    }, {});
+
+    const formattedCountries = Object.keys(countryCounts)
+      .map(key => ({ country: key, count: countryCounts[key] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+    const newData = {
+      stats: statsRes.data,
+      activities: activityRes.data || [],
+      upcomingProjects: categorized,
+      countries: formattedCountries
+    };
+
+    // 💾 Mise en cache
+    dashboardCache = {
+      data: newData,
+      timestamp: Date.now()
+    };
+
+    setData(newData);
+  } catch (error) {
+    console.error("Erreur dashboard:", error);
+    // ✅ Même en cas de timeout/erreur, on affiche quelque chose
+    setData({
+      stats: null,
+      activities: [],
+      upcomingProjects: [],
+      countries: []
+    });
+  } finally {
+    // ✅ TOUJOURS arrêter le loading après 100ms
+    setTimeout(() => {
       setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const [statsRes, activityRes, projectsRes, countryRes] = await Promise.all([
-        supabase.from('dashboard_stats').select('*').single(),
-        supabase.from('recent_activity').select('id, type, message, created_at').limit(6).order('created_at', { ascending: false }),
-        supabase.from('projects')
-          .select('name, deadline')
-          .eq('status', 'en_cours')
-          .not('deadline', 'is', null)
-          .order('deadline', { ascending: true }),
-        supabase.from('clients').select('country')
-      ]);
-
-      const today = new Date();
-      const next3 = new Date();
-      next3.setDate(today.getDate() + 3);
-      const next7 = new Date();
-      next7.setDate(today.getDate() + 7);
-
-      const categorized = (projectsRes.data || [])
-        .filter((p: any) => new Date(p.deadline) <= next7)
-        .map((p: any) => {
-          const deadline = new Date(p.deadline);
-          let level = "soon";
-          if (deadline < today) level = "overdue";
-          else if (deadline <= next3) level = "urgent";
-          return { ...p, level };
-        });
-
-      const countryCounts = (countryRes.data || []).reduce((acc: any, curr: any) => {
-        const country = curr.country || "Non défini";
-        acc[country] = (acc[country] || 0) + 1;
-        return acc;
-      }, {});
-
-      const formattedCountries = Object.keys(countryCounts)
-        .map(key => ({ country: key, count: countryCounts[key] }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3);
-
-      const newData = {
-        stats: statsRes.data,
-        activities: activityRes.data || [],
-        upcomingProjects: categorized,
-        countries: formattedCountries
-      };
-
-      // 💾 Mise en cache
-      dashboardCache = {
-        data: newData,
-        timestamp: Date.now()
-      };
-
-      setData(newData);
-    } catch (error) {
-      console.error("Erreur dashboard:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    }, 100);
+  }
+}, []);
 
   useEffect(() => {
     fetchDashboardData();
