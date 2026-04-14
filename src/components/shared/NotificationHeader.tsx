@@ -78,30 +78,6 @@ export const NotificationHeader = ({ userId, onNotificationClick }: Notification
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-
-    const channel = supabase
-      .channel(`user-notifs-${userId}`)
-      .on(
-        'postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'notifications', 
-          filter: `profile_id=eq.${userId}` 
-        }, 
-        () => {
-          fetchNotifications();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-
   const markAllAsRead = async () => {
     await supabase
       .from('notifications')

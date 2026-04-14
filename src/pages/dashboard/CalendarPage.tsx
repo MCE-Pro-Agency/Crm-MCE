@@ -104,7 +104,10 @@ export default function CalendarPage() {
   };
 
   const connectGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    // linkIdentity lie le compte Google à la session existante
+    // sans la remplacer — le rôle admin est préservé.
+    // (Nécessite "Enable manual linking" dans Supabase Auth settings)
+    const { error } = await supabase.auth.linkIdentity({
       provider: "google",
       options: {
         scopes: "https://www.googleapis.com/auth/calendar",
@@ -116,7 +119,7 @@ export default function CalendarPage() {
       },
     });
 
-    if (error) toast.error("Erreur connexion Google");
+    if (error) toast.error("Erreur connexion Google : " + error.message);
   };
 
   const fetchGoogleEvents = async (): Promise<CalendarEvent[]> => {

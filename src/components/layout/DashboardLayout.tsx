@@ -37,50 +37,76 @@ const isAdminRole = (role?: string | null) => {
 };
 
 const navItems: NavItem[] = [
-  { icon: <LayoutDashboard className="w-5 h-5" />, label: "Tableau de bord", href: "/dashboard" },
-  { icon: <Users className="w-5 h-5" />, label: "Prospect", href: "/dashboard/Leads" },
-  { icon: <UserCheck className="w-5 h-5" />, label: "Clients", href: "/dashboard/clients" },
-  { icon: <FolderKanban className="w-5 h-5" />, label: "Projets", href: "/dashboard/projects" },
-  { icon: <CheckSquare className="w-5 h-5" />, label: "Tâches", href: "/dashboard/tasks" },
-  { icon: <Calendar className="w-5 h-5" />, label: "Calendrier", href: "/dashboard/calendar" },
-  { icon: <MessageSquare className="w-5 h-5" />, label: "Collaboration", href: "/dashboard/collaboration" },
-  { icon: <FileText className="w-5 h-5" />, label: "Devis", href: "/dashboard/quotes", adminOnly: true },
-  { icon: <FileText className="w-5 h-5" />, label: "Factures", href: "/dashboard/invoices", adminOnly: true },
-  // MODULE RH
-  { icon: <UserPlus className="w-5 h-5" />, label: "Recrutement", href: "/dashboard/recruitment", adminOnly: true },
+  { icon: <LayoutDashboard className="w-5 h-5" />, label: "Tableau de bord",  href: "/dashboard" },
+  { icon: <Users         className="w-5 h-5" />, label: "Prospect",           href: "/dashboard/Leads" },
+  { icon: <UserCheck     className="w-5 h-5" />, label: "Clients",            href: "/dashboard/clients" },
+  { icon: <FolderKanban  className="w-5 h-5" />, label: "Projets",            href: "/dashboard/projects" },
+  { icon: <CheckSquare   className="w-5 h-5" />, label: "Tâches",             href: "/dashboard/tasks" },
+  { icon: <Calendar      className="w-5 h-5" />, label: "Calendrier",         href: "/dashboard/calendar" },
+  { icon: <MessageSquare className="w-5 h-5" />, label: "Collaboration",      href: "/dashboard/collaboration" },
+  { icon: <FileText      className="w-5 h-5" />, label: "Devis",              href: "/dashboard/quotes",      adminOnly: true },
+  { icon: <FileText      className="w-5 h-5" />, label: "Factures",           href: "/dashboard/invoices",    adminOnly: true },
+  { icon: <UserPlus      className="w-5 h-5" />, label: "Recrutement",        href: "/dashboard/recruitment", adminOnly: true },
 ];
 
-// ─── MCE Logo SVG Component ──────────────────────────────────────────────
+// ─── MCE Logo — clés uniques garanties ──────────────────────────────────────
+const outerDots: [number, number][] = [
+  [20,4],[26,5],[32,9],[36,15],[38,20],[36,25],[32,31],[26,35],
+  [20,36],[14,35],[8,31],[4,25],[2,20],[4,15],[8,9],[14,5],
+];
+const innerDots: [number, number][] = [
+  [20,10],[27,13],[30,20],[27,27],[20,30],[13,27],[10,20],[13,13],
+];
+
 const MCELogo = ({ size = 32 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-    {/* Outer circles - MCE blue */}
-    {([[20,4],[26,5],[32,9],[36,15],[38,20],[36,25],[32,31],[26,35],[20,36],[14,35],[8,31],[4,25],[2,20],[4,15],[8,9],[14,5]] as [number,number][]).map(([cx,cy],i) => (
-      <circle key={`o${i}`} cx={cx} cy={cy} r={1.6} fill={i%3===0?"#00AEEF":"#60D0F8"} />
+    {outerDots.map(([cx, cy], i) => (
+      <circle
+        key={`outer-dot-${i}`}
+        cx={cx} cy={cy} r={1.6}
+        fill={i % 3 === 0 ? "#00AEEF" : "#60D0F8"}
+      />
     ))}
-    {/* Inner circles */}
-    {([[20,10],[27,13],[30,20],[27,27],[20,30],[13,27],[10,20],[13,13]] as [number,number][]).map(([cx,cy],i) => (
-      <circle key={`i${i}`} cx={cx} cy={cy} r={1.2} fill={i%2===0?"#00AEEF":"#60D0F8"} />
+    {innerDots.map(([cx, cy], i) => (
+      <circle
+        key={`inner-dot-${i}`}
+        cx={cx} cy={cy} r={1.2}
+        fill={i % 2 === 0 ? "#00AEEF" : "#60D0F8"}
+      />
     ))}
-    {/* Center dot */}
     <circle cx={20} cy={20} r={1.8} fill="#0A6EBD" />
-    {/* MCE text */}
-    <text x="20" y="23" textAnchor="middle" fontSize="6.5" fontWeight="bold" fill="white" fontFamily="sans-serif">MCE</text>
+    <text
+      x="20" y="23"
+      textAnchor="middle"
+      fontSize="6.5"
+      fontWeight="bold"
+      fill="white"
+      fontFamily="sans-serif"
+    >
+      MCE
+    </text>
   </svg>
 );
 
+// ─── DashboardLayout ──────────────────────────────────────────────────────────
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const { profile, loading } = useProfile();
 
-  const userRole = profile?.role || "user";
+  const userRole = profile?.role || null;
   const isAdmin = isAdminRole(userRole);
-  const filteredNavItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
-  // --- LOGIQUE DE REDIRECTION NOTIFICATION ---
+  // ── Ne filtrer les items admin QUE quand le profil est chargé ─────────────
+  // Pendant le chargement on affiche tous les items non-admin
+  // pour éviter que les sections "sautent" une fois le rôle connu
+  const filteredNavItems = loading
+    ? navItems.filter((item) => !item.adminOnly)
+    : navItems.filter((item) => !item.adminOnly || isAdmin);
+
   const handleNotificationRedirect = (projectId: string) => {
     navigate(`/dashboard/projects?open=${projectId}`);
   };
@@ -90,7 +116,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
       await supabase.auth.signOut();
       toast.success("Déconnexion réussie");
       navigate("/");
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la déconnexion");
     }
   };
@@ -102,9 +128,13 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar Mobile Overlay */}
+
+      {/* Overlay mobile */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-foreground/50 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
+        <div
+          className="fixed inset-0 bg-foreground/50 z-40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
       )}
 
       {/* Sidebar */}
@@ -113,6 +143,8 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
         collapsed ? "w-20" : "w-64",
         mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
+
+        {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
           <Link to="/dashboard" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
@@ -125,16 +157,17 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
               </div>
             )}
           </Link>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="hidden lg:flex h-8 w-8 hover:bg-sidebar-accent" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex h-8 w-8 hover:bg-sidebar-accent"
             onClick={() => setCollapsed(!collapsed)}
           >
             <Menu className="w-4 h-4" />
           </Button>
         </div>
 
+        {/* Navigation — key = href (toujours unique) */}
         <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
           {filteredNavItems.map((item) => (
             <Link
@@ -142,8 +175,8 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
               to={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                location.pathname === item.href 
-                  ? "bg-primary text-primary-foreground shadow-md" 
+                location.pathname === item.href
+                  ? "bg-primary text-primary-foreground shadow-md"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
               onClick={() => setMobileOpen(false)}
@@ -154,8 +187,10 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
           ))}
         </nav>
 
+        {/* Footer sidebar */}
         <div className="p-3 border-t border-sidebar-border space-y-1">
-          {isAdmin && (
+          {/* Lien Utilisateurs — visible seulement quand admin confirmé et chargé */}
+          {!loading && isAdmin && (
             <Link
               to="/dashboard/users"
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
@@ -164,15 +199,15 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
               {!collapsed && <span>Utilisateurs</span>}
             </Link>
           )}
-          <Link 
-            to="/dashboard/settings" 
+          <Link
+            to="/dashboard/settings"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <Settings className="w-5 h-5" />
             {!collapsed && <span>Paramètres</span>}
           </Link>
-          <button 
-            onClick={handleSignOut} 
+          <button
+            onClick={handleSignOut}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-destructive hover:bg-destructive/10 transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -181,19 +216,26 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Contenu principal */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Header */}
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 z-30 shadow-sm">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setMobileOpen(true)}
+          >
             <Menu className="w-5 h-5" />
           </Button>
 
           <div className="flex items-center gap-4 ml-auto">
-            {/* 🔔 NOTIFICATIONS AVEC REDIRECTION */}
+            {/* Notifications */}
             {!loading && profile?.id && (
-              <NotificationHeader 
-                userId={profile.id} 
-                onNotificationClick={handleNotificationRedirect} 
+              <NotificationHeader
+                userId={profile.id}
+                onNotificationClick={handleNotificationRedirect}
               />
             )}
 
@@ -203,8 +245,12 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
               ) : (
                 <>
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold leading-none">{profile?.first_name} {profile?.last_name}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold mt-1 tracking-wider">{profile?.role}</p>
+                    <p className="text-sm font-bold leading-none">
+                      {profile?.first_name} {profile?.last_name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold mt-1 tracking-wider">
+                      {profile?.role}
+                    </p>
                   </div>
                   <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
                     <span className="text-primary font-bold text-xs">{getInitials()}</span>
@@ -215,6 +261,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
           </div>
         </header>
 
+        {/* Page content */}
         <main className="flex-1 p-6 overflow-auto bg-slate-50/50">
           {children}
         </main>

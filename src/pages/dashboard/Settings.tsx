@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
-import { Camera, Loader2, Moon, Save, Sun } from "lucide-react";
+import { Camera, Loader2, LockKeyhole, Moon, Save, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,11 +16,17 @@ const Settings = () => {
   );
   const [uploading, setUploading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [profileForm, setProfileForm] = useState({
     first_name: "",
     last_name: "",
+    first_name: "",
+    last_name: "",
     phone: "",
-    country: "",
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: "",
+    confirmNewPassword: "",
   });
 
   useEffect(() => {
@@ -28,9 +34,8 @@ const Settings = () => {
       first_name: profile?.first_name || "",
       last_name: profile?.last_name || "",
       phone: profile?.phone || "",
-      country: profile?.country || "",
     });
-  }, [profile?.first_name, profile?.last_name, profile?.phone, profile?.country]);
+  }, [profile?.first_name, profile?.last_name, profile?.phone]);
 
   const handleSaveProfile = async () => {
     if (!profile?.id) return;
@@ -42,7 +47,6 @@ const Settings = () => {
         first_name: profileForm.first_name,
         last_name: profileForm.last_name,
         phone: profileForm.phone,
-        country: profileForm.country,
       })
       .eq("id", profile.id);
 
@@ -52,9 +56,51 @@ const Settings = () => {
       return;
     }
 
+
     toast.success("Vos informations ont été mises à jour");
     setSavingProfile(false);
     window.location.reload();
+  };
+
+  const handleChangePassword = async () => {
+    const { newPassword, confirmNewPassword } = passwordForm;
+
+    if (!newPassword || !confirmNewPassword) {
+      toast.error("Veuillez remplir tous les champs du mot de passe.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error("La confirmation du nouveau mot de passe ne correspond pas.");
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        throw new Error(updateError.message || "Échec de mise à jour du mot de passe.");
+      }
+
+      setPasswordForm({
+        newPassword: "",
+        confirmNewPassword: "",
+      });
+      toast.success("Mot de passe mis à jour avec succès.");
+    } catch (error: any) {
+      toast.error(error?.message || "Impossible de modifier le mot de passe.");
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   // Gestion du Thème (Noir ou Blanc)
@@ -176,20 +222,52 @@ const Settings = () => {
                     className="bg-background"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">Pays</Label>
-                  <Input
-                    value={profileForm.country}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, country: e.target.value }))}
-                    className="bg-background"
-                  />
-                </div>
+
                 <div className="md:col-span-2 flex justify-end">
                   <Button onClick={handleSaveProfile} disabled={savingProfile || profileLoading} className="gap-2">
                     <Save className="w-4 h-4" />
                     {savingProfile ? "Enregistrement..." : "Enregistrer mes infos"}
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border bg-card">
+            <CardHeader>
+              <CardTitle>Sécurité du compte</CardTitle>
+              <CardDescription>Changez votre mot de passe.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Nouveau mot de passe</Label>
+                <Input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
+                  }
+                  className="bg-background"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Confirmer le nouveau mot de passe</Label>
+                <Input
+                  type="password"
+                  value={passwordForm.confirmNewPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({ ...prev, confirmNewPassword: e.target.value }))
+                  }
+                  className="bg-background"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={handleChangePassword} disabled={changingPassword} className="gap-2">
+                  {changingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <LockKeyhole className="w-4 h-4" />}
+                  {changingPassword ? "Mise à jour..." : "Modifier mon mot de passe"}
+                </Button>
               </div>
             </CardContent>
           </Card>

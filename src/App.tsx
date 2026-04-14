@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import CalendarPage from "./pages/dashboard/CalendarPage";
@@ -20,7 +22,7 @@ import Tasks from "./pages/dashboard/Tasks";
 import Users from "./pages/dashboard/Users";
 import Index from "./pages/Index";
 
-// ─── NotFound Page ───────────────────────────────────────────────────────────
+// ─── NotFound Page ────────────────────────────────────────────────────────────
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-screen">
     <h1 className="text-2xl font-bold">Page non trouvée</h1>
@@ -30,40 +32,26 @@ const NotFound = () => (
   </div>
 );
 
-// ─── Optimized QueryClient Configuration ─────────────────────────────────────
+// ─── QueryClient ──────────────────────────────────────────────────────────────
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // ✅ CACHE : Garder les données en cache pendant 10 minutes
-      staleTime: 10 * 60 * 1000, // 10 minutes
-      
-      // ✅ MEMORY : Garder les données en mémoire pendant 15 minutes après la dernière utilisation
-      gcTime: 15 * 60 * 1000, // Ancien "cacheTime"
-      
-      // ✅ REFETCH : Refetch au focus de la fenêtre si données stale
+      staleTime: 10 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
       refetchOnWindowFocus: true,
-      
-      // ✅ REFETCH : Refetch au remontage du composant si données stale
       refetchOnMount: true,
-      
-      // ✅ REFETCH : Refetch à la reconnexion réseau si données stale
       refetchOnReconnect: true,
-      
-      // ✅ RETRY : Réessayer 2 fois en cas d'erreur (au lieu de 3)
       retry: 2,
-      
-      // ✅ RETRY DELAY : Attendre 1 seconde entre les tentatives
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
-      // ✅ Réessayer 1 fois en cas d'erreur
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
   },
 });
 
-// ─── App Component ──────────────────────────────────────────────────────────
+// ─── App ──────────────────────────────────────────────────────────────────────
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -71,26 +59,50 @@ const App = () => (
       <Sonner position="bottom-right" richColors closeButton />
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
+          {/* ── Routes publiques ─────────────────────────────────────────── */}
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Dashboard Routes */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/leads" element={<Leads />} />
-          <Route path="/dashboard/clients" element={<Clients />} />
-          <Route path="/dashboard/projects" element={<Projects />} />
-          <Route path="/dashboard/tasks" element={<Tasks />} />
-          <Route path="/dashboard/calendar" element={<CalendarPage />} />
-          <Route path="/dashboard/settings" element={<Settings />} />
-          <Route path="/dashboard/users" element={<Users />} />
-          <Route path="/dashboard/collaboration" element={<Collaboration />} />
-          <Route path="/dashboard/quotes" element={<Quotes />} />
-          <Route path="/dashboard/invoices" element={<Invoices />} />
-          <Route path="/dashboard/recruitment" element={<Recruitment />} />
+          {/* ── Routes protégées (session obligatoire) ───────────────────── */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute><Dashboard /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/leads" element={
+            <ProtectedRoute><Leads /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/clients" element={
+            <ProtectedRoute><Clients /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/projects" element={
+            <ProtectedRoute><Projects /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/tasks" element={
+            <ProtectedRoute><Tasks /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/calendar" element={
+            <ProtectedRoute><CalendarPage /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/settings" element={
+            <ProtectedRoute><Settings /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/users" element={
+            <ProtectedRoute><Users /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/collaboration" element={
+            <ProtectedRoute><Collaboration /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/quotes" element={
+            <ProtectedRoute><Quotes /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/invoices" element={
+            <ProtectedRoute><Invoices /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/recruitment" element={
+            <ProtectedRoute><Recruitment /></ProtectedRoute>
+          } />
 
-          {/* 404 Fallback */}
+          {/* ── 404 ──────────────────────────────────────────────────────── */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
