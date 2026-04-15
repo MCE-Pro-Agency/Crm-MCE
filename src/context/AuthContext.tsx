@@ -29,11 +29,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Charger le profil depuis la table profiles ────────────────────────────
   const loadProfile = async (u: User) => {
-    const { data, error } = await supabase
+    // Timeout 5s : si Supabase DB est en pause ou lente, on utilise le fallback
+    // plutôt que d'attendre indéfiniment.
+    const profileQuery = supabase
       .from("profiles")
       .select("id, first_name, last_name, phone, role, avatar_url")
       .eq("id", u.id)
       .single();
+
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+      setTimeout(
+        () => resolve({ data: null, error: new Error("profile_timeout") }),
+        5000
+      )
+    );
+
+    const { data, error } = await Promise.race([profileQuery, timeoutPromise]) as {
+      data: any;
+      error: any;
+    };
 
     if (!error && data) {
       setProfile({
@@ -48,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Fallback sur les metadata Google/OAuth si la ligne profiles est absente
+    // Fallback sur les metadata du JWT (pas de requête DB, instantané)
     const meta = u.user_metadata || {};
     const fallback: Profile = {
       id:         u.id,
@@ -61,18 +75,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setProfile(fallback);
 
-    // Tenter de créer la ligne profiles pour les prochains chargements
-    await supabase.from("profiles").upsert(
-      {
-        id:         u.id,
-        first_name: fallback.first_name,
-        last_name:  fallback.last_name,
-        phone:      fallback.phone,
-        role:       fallback.role,
-        avatar_url: fallback.avatar_url,
-      },
-      { onConflict: "id" }
-    );
+    // Upsert uniquement si ce n'est pas un timeout (évite de spammer une DB lente)
+    if (!error?.message?.includes("profile_timeout")) {
+      void (async () => {
+        try {
+          await supabase.from("profiles").upsert(
+            {
+              id:         u.id,
+              first_name: fallback.first_name,
+              last_name:  fallback.last_name,
+              phone:      fallback.phone,
+              role:       fallback.role,
+              avatar_url: fallback.avatar_url,
+            },
+            { onConflict: "id" }
+          );
+        } catch {}
+      })();
+    }
   };
 
   useEffect(() => {
