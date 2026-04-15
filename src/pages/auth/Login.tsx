@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -94,7 +93,6 @@ const MCEAgencySection = () => (
 const Login = () => {
   const navigate   = useNavigate();
   const location   = useLocation();
-  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
 
   // Page d'origine avant la redirection vers /login
@@ -112,40 +110,13 @@ const Login = () => {
   const [isLoading, setIsLoading]       = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const isDeletedProfile = (profile: any) =>
-    String(profile?.role ?? "").toLowerCase() === "deleted";
-
-  // ── Prefetch dashboard data ───────────────────────────────────────────────
-  const prefetchDashboardData = async (userId: string) => {
-    try {
-      await queryClient.prefetchQuery({
-        queryKey: ["profile"],
-        queryFn: async () => {
-          const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
-          if (error) throw error;
-          return data;
-        },
-      });
-      await queryClient.prefetchQuery({
-        queryKey: ["notifications"],
-        queryFn: async () => {
-          const { data, error } = await supabase.from("notifications").select("*").eq("profile_id", userId).order("created_at", { ascending: false }).limit(15);
-          if (error) throw error;
-          return data;
-        },
-      });
-    } catch (err) {
-      console.warn("Prefetch warning:", err);
-    }
-  };
-
   // ── Connexion email/password ──────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -158,28 +129,9 @@ const Login = () => {
         );
       }
 
-      if (data.user) {
-        // Vérification compte supprimé avec timeout 3s — si lent, on laisse passer
-        const profileCheckPromise = supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.user.id)
-          .single();
-        const timeoutPromise = new Promise<{ data: null; error: null }>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: null }), 3000)
-        );
-        const { data: loginProfile } = await Promise.race([profileCheckPromise, timeoutPromise]) as { data: any; error: any };
-
-        if (loginProfile && isDeletedProfile(loginProfile)) {
-          await supabase.auth.signOut();
-          throw new Error("Votre compte a été supprimé. Contactez un administrateur.");
-        }
-
-        toast.success("Content de vous revoir !");
-        // Prefetch en arrière-plan — ne pas attendre pour ne pas bloquer la navigation
-        prefetchDashboardData(data.user.id).catch(() => {});
-        navigate(from, { replace: true });
-      }
+      // Auth réussie → naviguer immédiatement, AuthContext charge le profil en arrière-plan
+      toast.success("Content de vous revoir !");
+      navigate(from, { replace: true });
     } catch (error: any) {
       toast.error(error.message || "Une erreur est survenue lors de la connexion");
     } finally {
