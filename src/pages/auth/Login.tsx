@@ -159,11 +159,16 @@ const Login = () => {
       }
 
       if (data.user) {
-        const { data: loginProfile } = await supabase
+        // Vérification compte supprimé avec timeout 3s — si lent, on laisse passer
+        const profileCheckPromise = supabase
           .from("profiles")
-          .select("*")
+          .select("role")
           .eq("id", data.user.id)
           .single();
+        const timeoutPromise = new Promise<{ data: null; error: null }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: null }), 3000)
+        );
+        const { data: loginProfile } = await Promise.race([profileCheckPromise, timeoutPromise]) as { data: any; error: any };
 
         if (loginProfile && isDeletedProfile(loginProfile)) {
           await supabase.auth.signOut();
