@@ -78,10 +78,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // ── onAuthStateChange est la source unique de vérité ─────────────────────
-    // Il fire INITIAL_SESSION immédiatement avec la session en cache,
-    // puis SIGNED_IN / TOKEN_REFRESHED / SIGNED_OUT selon les événements.
-    // On n'appelle loadProfile QUE depuis ici pour éviter le double appel.
+    // ── 1. getSession — lecture du cache (instantanée, pas de réseau) ─────────
+    // Stoppe le loading IMMÉDIATEMENT pour que ProtectedRoute ne reste pas
+    // bloqué indéfiniment même si loadProfile est lente en production.
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (!mounted) return;
+
+      if (error) {
+        console.warn("AuthContext: session invalide, nettoyage →", error.message);
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+
+      if (session?.user) {
+        // Rendre l'utilisateur disponible tout de suite pour ProtectedRoute
+        setUser(session.user);
+        // Charger le profil en arrière-plan (ne bloque PAS le loading)
+        loadProfile(session.user).catch((err) =>
+          console.error("AuthContext: loadProfile initial", err)
+        );
+      }
+
+      // Toujours stopper le loading après getSession (cache = rapide)
+      setLoading(false);
+    });
+
+    // ── 2. onAuthStateChange — événements en temps réel ───────────────────────
+    // Gère les redirects OAuth, refreshes de token, déconnexions.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -98,29 +122,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(null);
         }
 
+        // Forcer loading=false pour tous les événements (SIGNED_IN après OAuth, etc.)
         setLoading(false);
       }
     );
-
-    // ── getSession sert uniquement à stopper le loading si pas de session ────
-    // (cas navigation privée, premier visit sans session stockée)
-    // Si une session existe, INITIAL_SESSION ci-dessus la gère déjà.
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (!mounted) return;
-
-      if (error) {
-        console.warn("AuthContext: session invalide, nettoyage →", error.message);
-        await supabase.auth.signOut();
-        setLoading(false);
-        return;
-      }
-
-      // Pas de session → arrêter le loading immédiatement (redirect vers /login)
-      if (!session) {
-        setLoading(false);
-      }
-      // Si session présente : INITIAL_SESSION s'en charge, pas besoin d'agir ici
-    });
 
     return () => {
       mounted = false;
