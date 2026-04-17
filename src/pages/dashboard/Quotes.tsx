@@ -31,7 +31,7 @@ import {
   Trash2,
   FileText,
   Eye,
-  History,
+  History as HistoryIcon,
   Send,
   Download,
   X,
@@ -1122,7 +1122,7 @@ const Quotes = () => {
       {/* HISTORIQUE */}
       <div className="mt-6 border rounded-xl bg-card overflow-hidden">
         <div className="flex items-center gap-2 p-4 border-b">
-          <History className="w-4 h-4 text-primary" />
+          <HistoryIcon className="w-4 h-4 text-primary" />
           <h2 className="font-semibold text-sm">Historique des devis</h2>
         </div>
         <div className="p-4">

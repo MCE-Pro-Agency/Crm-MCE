@@ -33,7 +33,7 @@ import {
   Download,
   Eye,
   FileText,
-  History,
+  History as HistoryIcon,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -1064,7 +1064,7 @@ const handleDownloadPDF = async () => {
         {/* HISTORIQUE */}
         <div className="mt-6 border rounded-xl bg-card overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b">
-            <History className="w-4 h-4 text-primary" />
+            <HistoryIcon className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-sm">Historique des factures</h2>
           </div>
           <div className="p-4">

@@ -513,16 +513,14 @@ const Tasks = () => {
         </div>
 
         {/* HISTORIQUE */}
-        <div className="mt-6 border rounded-xl bg-card">
-          <details>
-            <summary className="flex items-center gap-2 p-4 cursor-pointer font-semibold text-sm select-none">
-              <History className="w-4 h-4 text-muted-foreground" />
-              Historique des tâches
-            </summary>
-            <div className="px-4 pb-4">
-              <HistoryPanel entityType="task" />
-            </div>
-          </details>
+        <div className="mt-6 border rounded-xl bg-card overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b">
+            <HistoryIcon className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-sm">Historique des tâches</h2>
+          </div>
+          <div className="p-4">
+            <HistoryPanel entityType="task" />
+          </div>
         </div>
       </div>
     </DashboardLayout>
@@ -631,7 +629,7 @@ const TaskItem = ({
         <div className="flex items-center justify-between lg:justify-end gap-4">
           <StatusBadge status={currentStatus} />
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"><History className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"><HistoryIcon className="w-4 h-4" /></Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

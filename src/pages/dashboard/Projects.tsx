@@ -46,7 +46,7 @@ import {
   Eye,
   FileText,
   Globe,
-  History,
+  History as HistoryIcon,
   Info,
   MoreHorizontal,
   Pencil,
@@ -876,16 +876,14 @@ const Projects = () => {
         </Dialog>
 
         {/* HISTORIQUE */}
-        <div className="mt-6 border rounded-xl bg-card">
-          <details>
-            <summary className="flex items-center gap-2 p-4 cursor-pointer font-semibold text-sm select-none">
-              <History className="w-4 h-4 text-muted-foreground" />
-              Historique des projets
-            </summary>
-            <div className="px-4 pb-4">
-              <HistoryPanel entityType="project" />
-            </div>
-          </details>
+        <div className="mt-6 border rounded-xl bg-card overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b">
+            <HistoryIcon className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-sm">Historique des projets</h2>
+          </div>
+          <div className="p-4">
+            <HistoryPanel entityType="project" />
+          </div>
         </div>
       </div>
     </DashboardLayout>

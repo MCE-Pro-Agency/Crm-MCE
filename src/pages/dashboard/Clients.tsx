@@ -31,7 +31,7 @@ import { HistoryPanel } from "@/components/shared/HistoryPanel";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 // Remplacez votre ligne lucide-react par celle-ci
-import { Eye, FileText, FileUp, History, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, FileText, FileUp, History as HistoryIcon, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 // Interface correspondant exactement à ta table SQL
@@ -666,7 +666,7 @@ const columns: Column<Client>[] = [
         {/* ── Historique ─────────────────────────────────────────────────── */}
         <div className="mt-6 border rounded-xl bg-card overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b">
-            <History className="w-4 h-4 text-primary" />
+            <HistoryIcon className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-sm">Historique des modifications clients</h2>
           </div>
           <div className="p-4">
