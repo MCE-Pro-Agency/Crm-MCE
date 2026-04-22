@@ -2,9 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { UserPlus } from "lucide-react";
 import {
-  BarChart3,
   Calendar,
   CheckSquare,
   FileText,
@@ -15,8 +13,7 @@ import {
   Menu,
   MessageSquare,
   Settings,
-  UserCheck,
-  Users
+  UserCheck, UserPlus, Users
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -30,11 +27,6 @@ interface NavItem {
   href: string;
   adminOnly?: boolean;
 }
-
-const isAdminRole = (role?: string | null) => {
-  const normalized = String(role || "").toLowerCase();
-  return normalized === "admin" || normalized === "administrateur";
-};
 
 const navItems: NavItem[] = [
   { icon: <LayoutDashboard className="w-5 h-5" />, label: "Tableau de bord",  href: "/dashboard" },
@@ -95,10 +87,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { profile, loading } = useProfile();
-
-  const userRole = profile?.role || null;
-  const isAdmin = isAdminRole(userRole);
+  const { profile, loading, isAdmin } = useProfile();
 
   // ── Filtrage nav : on attend que le profil soit chargé avant de masquer
   // les items admin. Si profile est null (encore en chargement), on les
@@ -249,7 +238,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                       {profile?.first_name} {profile?.last_name}
                     </p>
                     <p className="text-[10px] text-muted-foreground uppercase font-bold mt-1 tracking-wider">
-                      {profile?.role}
+                      {profile?.role === "superadmin" ? "Super Admin" : profile?.role}
                     </p>
                   </div>
                   <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">

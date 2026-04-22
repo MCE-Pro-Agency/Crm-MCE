@@ -12,6 +12,9 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Index from "./pages/Index";
 
+// ✅ PAGE RESET PASSWORD - Publique (accès via lien email)
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+
 // ✅ PAGES DASHBOARD - Lazy loading (ne charge que quand nécessaire)
 const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
 const Leads = lazy(() => import("./pages/dashboard/Leads"));
@@ -77,6 +80,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Dashboard Routes — protégées */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
