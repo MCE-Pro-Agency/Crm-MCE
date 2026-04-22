@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 import {
   Calendar,
@@ -103,27 +104,15 @@ const Projects = () => {
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-  
+  // ── Hook centralisé : isAdmin inclut superadmin ───────────────────────────
+  const { profile: userProfile, isAdmin, canDeleteIn } = useProfile();
+
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
-      
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserProfile(profile);
-        }
-      }
-      
       fetchData();
     };
     init();
@@ -203,11 +192,6 @@ const Projects = () => {
     country: "Sénégal"
   });
 
-  const isAdminRole = (role?: string | null) => {
-    const normalized = String(role || "").toLowerCase();
-    return normalized === "admin" || normalized === "administrateur";
-  };
-
   const filteredProjects = projects.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          p.client_name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -217,8 +201,8 @@ const Projects = () => {
   });
 
   const handleDelete = async (project: Project) => {
-    if (!isAdminRole(userProfile?.role)) {
-      toast.error("Accès refusé : seuls les administrateurs peuvent supprimer un projet.");
+    if (!canDeleteIn("projects")) {
+      toast.error("Accès refusé : vous n'avez pas les droits pour supprimer un projet.");
       return;
     }
 
@@ -284,7 +268,6 @@ const Projects = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isAdmin = isAdminRole(userProfile?.role);
     const isMember = selectedProject?.project_members?.some(
       (m: any) => m.profile_id === currentUser?.id
     );
@@ -461,7 +444,6 @@ const Projects = () => {
   };
 
   const handleEdit = (project: Project) => {
-    const isAdmin = isAdminRole(userProfile?.role);
     const isMember = project.project_members?.some(
       (m: any) => m.profile_id === currentUser?.id
     );
@@ -502,7 +484,7 @@ const Projects = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 px-0 sm:px-0">
-        {/* Header - Responsive */}
+        {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Projets</h1>
@@ -512,7 +494,7 @@ const Projects = () => {
             <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <HistoryIcon className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
             </Button>
-            {isAdminRole(userProfile?.role) && (
+            {isAdmin && (
               <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="gap-2 bg-primary flex-1 sm:flex-none">
                 <Plus className="w-4 h-4" /> Nouveau projet
               </Button>
@@ -539,16 +521,15 @@ const Projects = () => {
           }
         />
 
-        {/* Grid - Responsive */}
+        {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredProjects.map((project) => {
-            const isAdmin = isAdminRole(userProfile?.role);
             const isMember = project.project_members?.some(
               (m: any) => m.profile_id === currentUser?.id
             );
 
             const canEdit = isAdmin || isMember;
-            const canDelete = isAdmin;
+            const canDelete = canDeleteIn("projects");
 
             return (
               <ProjectCard
@@ -564,7 +545,7 @@ const Projects = () => {
           })}
         </div>
 
-        {/* DIALOG DE CRÉATION - Responsive */}
+        {/* DIALOG DE CRÉATION */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="w-[95vw] sm:w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader><DialogTitle className="text-lg sm:text-xl">{selectedProject ? `Modifier : ${selectedProject.name}` : "Créer un nouveau projet"}</DialogTitle></DialogHeader>
@@ -743,7 +724,7 @@ const Projects = () => {
           </DialogContent>
         </Dialog>
 
-        {/* DIALOG DE DÉTAILS - Responsive */}
+        {/* DIALOG DE DÉTAILS */}
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
           <DialogContent className="w-[95vw] sm:w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
@@ -754,7 +735,6 @@ const Projects = () => {
 
             {selectedProject && (
               <div className="space-y-6 py-4">
-                {/* GRILLE D'INFORMATIONS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><Label className="text-muted-foreground text-xs">Nom du projet</Label><p className="font-bold text-sm">{selectedProject.name}</p></div>
                   <div><Label className="text-muted-foreground text-xs">Client</Label><p className="font-bold text-sm">{selectedProject.client_name}</p></div>
@@ -765,7 +745,6 @@ const Projects = () => {
                   <div><Label className="text-muted-foreground text-xs">Livraison réelle</Label><p className="font-medium text-xs">{selectedProject.real_delivery_date ? new Date(selectedProject.real_delivery_date).toLocaleDateString() : "Non livrée"}</p></div>
                 </div>
 
-                {/* SECTION DOCUMENTS */}
                 <div className="space-y-3 border-t pt-4">
                   <Label className="text-sm font-semibold flex items-center gap-2">
                     <FileText className="w-4 h-4 text-primary" /> 
@@ -841,7 +820,6 @@ const Projects = () => {
                   )}
                 </div>
 
-                {/* ÉQUIPE */}
                 <div className="space-y-2 border-t pt-4">
                   <Label className="text-muted-foreground text-xs uppercase font-bold">Équipe ({selectedProject.project_members?.length || 0})</Label>
                   <div className="flex flex-wrap gap-2">
@@ -853,7 +831,6 @@ const Projects = () => {
                   </div>
                 </div>
 
-                {/* DESCRIPTION */}
                 <div className="space-y-2 border-t pt-4">
                   <Label className="text-muted-foreground text-xs uppercase font-bold">Description</Label>
                   <p className="text-sm border p-3 rounded-md bg-muted/20 whitespace-pre-wrap leading-relaxed">
@@ -861,7 +838,6 @@ const Projects = () => {
                   </p>
                 </div>
 
-                {/* PERFORMANCE */}
                 <div className="space-y-2 border-t pt-4">
                   <Label className="text-muted-foreground text-xs uppercase font-bold">Performance</Label>
                   <p className="text-sm border p-3 rounded-md bg-muted/20 whitespace-pre-wrap leading-relaxed italic text-muted-foreground">

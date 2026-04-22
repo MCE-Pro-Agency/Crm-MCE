@@ -1,10 +1,8 @@
 /**
  * useProfile — délègue entièrement à AuthContext.
- *
- * Plus d'appel getUser() redondant qui causait le spinner infini
- * après un redirect OAuth. AuthContext est la source unique de vérité.
  */
 import { useAuth, type Profile } from "@/context/AuthContext";
+import { canDelete, isAdminOrAbove, isSuperAdminRole, type AppModule } from "@/lib/permissions";
 import { supabase } from "@/lib/supabase";
 
 export type { Profile };
@@ -28,18 +26,17 @@ export function useProfile() {
       .eq("id", profile.id);
 
     if (!error) {
-      await refreshProfile(); // Recharge depuis AuthContext
+      await refreshProfile();
       return { success: true };
     }
     return { success: false, error };
   };
 
-  const isAdminRole = (role?: string | null) => {
-    const normalized = String(role || "").toLowerCase();
-    return normalized === "admin" || normalized === "administrateur";
-  };
+  const role = profile?.role ?? null;
 
-  const isAdmin = isAdminRole(profile?.role);
+  const isAdmin = isAdminOrAbove(role);
+  const isSuperAdmin = isSuperAdminRole(role);
+  const canDeleteIn = (module: AppModule) => canDelete(role, module);
 
   const displayName =
     profile?.first_name || profile?.last_name
@@ -51,6 +48,8 @@ export function useProfile() {
     loading,
     updateProfile,
     isAdmin,
+    isSuperAdmin,
+    canDeleteIn,
     displayName,
     refreshProfile,
   };

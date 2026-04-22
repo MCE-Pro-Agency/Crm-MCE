@@ -18,11 +18,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
-import { Search, Trash2, Users2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { KeyRound, Search, Trash2, Users2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useProfile } from "@/hooks/useProfile";
 
 type ManagedUser = {
   id: string;
@@ -34,19 +35,15 @@ type ManagedUser = {
   isDeleted: boolean;
 };
 
-const isAdminRole = (role?: string | null) => {
-  const normalized = String(role || "").toLowerCase();
-  return normalized === "admin" || normalized === "administrateur";
-};
-
 const getUserEmail = (profile: any): string | null => {
   return profile.email ?? profile.user_email ?? profile.email_address ?? null;
 };
 
-const getDeletionState = (profile: any): boolean => String(profile.role ?? "").toLowerCase() === "deleted";
+const getDeletionState = (profile: any): boolean =>
+  String(profile.role ?? "").toLowerCase() === "deleted";
 
 const Users = () => {
-  const { profile } = useProfile();
+  const { profile, isAdmin, isSuperAdmin } = useProfile();
   const [usersLoading, setUsersLoading] = useState(false);
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [userSearch, setUserSearch] = useState("");
@@ -54,6 +51,7 @@ const Users = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showDeletedUsers, setShowDeletedUsers] = useState(false);
   const [actingUserId, setActingUserId] = useState<string | null>(null);
+  const [resetLoadingId, setResetLoadingId] = useState<string | null>(null);
 
   const loadUsers = async () => {
     setUsersLoading(true);
@@ -83,10 +81,10 @@ const Users = () => {
   };
 
   useEffect(() => {
-    if (isAdminRole(profile?.role)) {
+    if (isAdmin) {
       loadUsers();
     }
-  }, [profile?.role]);
+  }, [isAdmin]);
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
@@ -114,9 +112,17 @@ const Users = () => {
   const deletedUsers = filteredUsers.filter((u) => u.isDeleted);
   const visibleUsers = showDeletedUsers ? deletedUsers : activeUsers;
 
+  // ── Suppression soft d'un utilisateur ────────────────────────────────────
   const deleteUserSafely = async (targetUserId: string) => {
     if (targetUserId === profile?.id) {
       toast.error("Vous ne pouvez pas supprimer votre propre compte.");
+      return;
+    }
+
+    // Empêcher la suppression d'un superadmin par un admin normal
+    const targetUser = users.find((u) => u.id === targetUserId);
+    if (targetUser?.role === "superadmin" && !isSuperAdmin) {
+      toast.error("Seul un superadmin peut supprimer un autre superadmin.");
       return;
     }
 
@@ -155,19 +161,44 @@ const Users = () => {
     toast.success("Utilisateur supprimé (historique conservé)");
   };
 
+  // ── Envoi de lien de réinitialisation (superadmin uniquement) ────────────
+  const sendPasswordReset = async (targetEmail: string, targetId: string) => {
+    if (!targetEmail) {
+      toast.error("Cet utilisateur n'a pas d'email renseigné.");
+      return;
+    }
+
+    setResetLoadingId(targetId);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-password-reset", {
+        body: { email: targetEmail },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Lien de réinitialisation envoyé à ${targetEmail}`);
+    } catch (err: any) {
+      toast.error("Erreur : " + (err.message || "Impossible d'envoyer le lien"));
+    } finally {
+      setResetLoadingId(null);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-6xl">
         <div className="rounded-2xl border bg-gradient-to-r from-card via-card to-slate-50/80 p-6 shadow-sm">
           <div className="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-display font-bold text-foreground">Utilisateurs</h1>
-            <p className="text-muted-foreground mt-1">Gérez les membres de l'entreprise et consultez les anciens membres.</p>
-          </div>
-          <Button variant="outline" onClick={loadUsers} className="gap-2">
-            <Users2 className="w-4 h-4" />
-            Actualiser
-          </Button>
+            <div>
+              <h1 className="text-3xl font-display font-bold text-foreground">Utilisateurs</h1>
+              <p className="text-muted-foreground mt-1">
+                Gérez les membres de l'entreprise et consultez les anciens membres.
+              </p>
+            </div>
+            <Button variant="outline" onClick={loadUsers} className="gap-2">
+              <Users2 className="w-4 h-4" />
+              Actualiser
+            </Button>
           </div>
         </div>
 
@@ -194,6 +225,7 @@ const Users = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les rôles</SelectItem>
+                  <SelectItem value="superadmin">Super Admin</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="commercial">Commercial</SelectItem>
                   <SelectItem value="developer">Développeur</SelectItem>
@@ -222,7 +254,12 @@ const Users = () => {
               <p className="text-sm text-muted-foreground">
                 {showDeletedUsers ? "Affichage des anciens membres" : "Affichage des membres actifs"}
               </p>
-              <Button variant="outline" size="sm" onClick={() => setShowDeletedUsers((prev) => !prev)} className="gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeletedUsers((prev) => !prev)}
+                className="gap-2"
+              >
                 <Users2 className="w-4 h-4" />
                 {showDeletedUsers ? "Voir les membres actifs" : "Voir les anciens membres"}
               </Button>
@@ -249,8 +286,14 @@ const Users = () => {
                       <TableCell>{u.email || "Email non renseigné"}</TableCell>
                       <TableCell>{u.phone || "-"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {u.role || "-"}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "capitalize",
+                            u.role === "superadmin" && "border-amber-500 text-amber-600 bg-amber-50"
+                          )}
+                        >
+                          {u.role === "superadmin" ? "Super Admin" : u.role || "-"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -260,16 +303,39 @@ const Users = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         {!u.isDeleted ? (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteUserSafely(u.id)}
-                            disabled={actingUserId === u.id || u.id === profile?.id || usersLoading}
-                            className="gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Supprimer
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Bouton reset password — superadmin uniquement */}
+                            {isSuperAdmin && u.id !== profile?.id && u.email && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => sendPasswordReset(u.email!, u.id)}
+                                disabled={resetLoadingId === u.id}
+                                className="gap-2"
+                                title="Envoyer un lien de réinitialisation"
+                              >
+                                <KeyRound className="w-4 h-4" />
+                                {resetLoadingId === u.id ? "Envoi..." : "Reset MDP"}
+                              </Button>
+                            )}
+
+                            {/* Bouton supprimer */}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => deleteUserSafely(u.id)}
+                              disabled={
+                                actingUserId === u.id ||
+                                u.id === profile?.id ||
+                                usersLoading ||
+                                (u.role === "superadmin" && !isSuperAdmin)
+                              }
+                              className="gap-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Supprimer
+                            </Button>
+                          </div>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground bg-muted/40">
                             Ancien membre
