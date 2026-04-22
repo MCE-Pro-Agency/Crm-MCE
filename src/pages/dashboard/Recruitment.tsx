@@ -158,6 +158,7 @@ const Recruitment = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [search, setSearch] = useState("");
   const [showNewEmployeeDialog, setShowNewEmployeeDialog] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -587,6 +588,10 @@ const Recruitment = () => {
             </p>
           </div>
 
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm">
+              <HistoryIcon className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
+            </Button>
           <Dialog open={showNewEmployeeDialog} onOpenChange={setShowNewEmployeeDialog}>
             <DialogTrigger asChild>
               <Button className="gap-2" onClick={handleOpenNewDialog}>
@@ -892,6 +897,7 @@ const Recruitment = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className="grid grid-cols-12 gap-6">
@@ -1391,15 +1397,12 @@ const Recruitment = () => {
       </AlertDialog>
 
       {/* HISTORIQUE */}
-      <div className="mt-6 border rounded-xl bg-card overflow-hidden">
-        <div className="flex items-center gap-2 p-4 border-b">
-          <HistoryIcon className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold text-sm">Historique des salariés</h2>
-        </div>
-        <div className="p-4">
-          <HistoryPanel entityType="recruitment" />
-        </div>
-      </div>
+      <HistoryPanel
+        entityType="recruitment"
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        title="Historique des salariés"
+      />
     </DashboardLayout>
   );
 };

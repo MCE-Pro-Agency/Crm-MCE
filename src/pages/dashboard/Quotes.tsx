@@ -223,6 +223,7 @@ const Quotes = () => {
   const [countryFilter, setCountryFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showNewQuoteDialog, setShowNewQuoteDialog] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [newQuote, setNewQuote] = useState({
     number: "",
@@ -570,6 +571,10 @@ const Quotes = () => {
               </p>
             </div>
 
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm">
+                <HistoryIcon className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
+              </Button>
             <Dialog open={showNewQuoteDialog} onOpenChange={setShowNewQuoteDialog}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
@@ -709,6 +714,7 @@ const Quotes = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           {/* BARRE DE RECHERCHE */}
@@ -1119,16 +1125,12 @@ const Quotes = () => {
         )}
       </div>
 
-      {/* HISTORIQUE */}
-      <div className="mt-6 border rounded-xl bg-card overflow-hidden">
-        <div className="flex items-center gap-2 p-4 border-b">
-          <HistoryIcon className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold text-sm">Historique des devis</h2>
-        </div>
-        <div className="p-4">
-          <HistoryPanel entityType="quote" />
-        </div>
-      </div>
+      <HistoryPanel
+        entityType="quote"
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        title="Historique des devis"
+      />
 
       {/* DIALOG DE SUPPRESSION */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -358,6 +358,7 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -743,9 +744,14 @@ const handleDownloadPDF = async () => {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Factures</h1>
             <p className="text-muted-foreground">Gestion des factures, paiements et relances clients</p>
           </div>
-          <Button onClick={() => handleOpenModal()} className="gap-2 bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4" /> Nouvelle facture
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm">
+              <HistoryIcon className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
+            </Button>
+            <Button onClick={() => handleOpenModal()} className="gap-2 bg-primary hover:bg-primary/90">
+              <Plus className="w-4 h-4" /> Nouvelle facture
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -1061,16 +1067,12 @@ const handleDownloadPDF = async () => {
           </DialogContent>
         </Dialog>
 
-        {/* HISTORIQUE */}
-        <div className="mt-6 border rounded-xl bg-card overflow-hidden">
-          <div className="flex items-center gap-2 p-4 border-b">
-            <HistoryIcon className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-sm">Historique des factures</h2>
-          </div>
-          <div className="p-4">
-            <HistoryPanel entityType="invoice" />
-          </div>
-        </div>
+        <HistoryPanel
+          entityType="invoice"
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          title="Historique des factures"
+        />
       </div>
     </DashboardLayout>
   );

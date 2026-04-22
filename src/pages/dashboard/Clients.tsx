@@ -93,6 +93,7 @@ const [loadingDocs, setLoadingDocs] = useState(false);
 const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 const [selectedClientDetails, setSelectedClientDetails] = useState<Client | null>(null);
 const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 const fetchClients = async () => {
   try {
     setLoading(true);
@@ -410,9 +411,14 @@ const columns: Column<Client>[] = [
             <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
             <p className="text-muted-foreground">Gérez votre base de données clients et leurs besoins.</p>
           </div>
-          <Button onClick={() => { setEditingClient(null); setIsDialogOpen(true); }} className="gap-2">
-            <Plus className="w-4 h-4" /> Nouveau client
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm">
+              <HistoryIcon className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
+            </Button>
+            <Button onClick={() => { setEditingClient(null); setIsDialogOpen(true); }} className="gap-2">
+              <Plus className="w-4 h-4" /> Nouveau client
+            </Button>
+          </div>
         </div>
 
         <FilterBar 
@@ -663,16 +669,12 @@ const columns: Column<Client>[] = [
           <DataTable columns={columns} data={filteredClients} />
         )}
 
-        {/* ── Historique ─────────────────────────────────────────────────── */}
-        <div className="mt-6 border rounded-xl bg-card overflow-hidden">
-          <div className="flex items-center gap-2 p-4 border-b">
-            <HistoryIcon className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-sm">Historique des modifications clients</h2>
-          </div>
-          <div className="p-4">
-            <HistoryPanel entityType="client" />
-          </div>
-        </div>
+        <HistoryPanel
+          entityType="client"
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          title="Historique des clients"
+        />
       </div>
     </DashboardLayout>
   );

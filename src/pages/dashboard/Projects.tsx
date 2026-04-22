@@ -104,6 +104,7 @@ const Projects = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   
   useEffect(() => {
@@ -515,11 +516,16 @@ const Projects = () => {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Projets</h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-1">Suivi des livrables et performance.</p>
           </div>
-          {isAdminRole(userProfile?.role) && (
-            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="gap-2 bg-primary w-full sm:w-auto">
-              <Plus className="w-4 h-4" /> Nouveau projet
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+              <HistoryIcon className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
             </Button>
-          )}
+            {isAdminRole(userProfile?.role) && (
+              <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="gap-2 bg-primary flex-1 sm:flex-none">
+                <Plus className="w-4 h-4" /> Nouveau projet
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -875,16 +881,12 @@ const Projects = () => {
           </DialogContent>
         </Dialog>
 
-        {/* HISTORIQUE */}
-        <div className="mt-6 border rounded-xl bg-card overflow-hidden">
-          <div className="flex items-center gap-2 p-4 border-b">
-            <HistoryIcon className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-sm">Historique des projets</h2>
-          </div>
-          <div className="p-4">
-            <HistoryPanel entityType="project" />
-          </div>
-        </div>
+        <HistoryPanel
+          entityType="project"
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          title="Historique des projets"
+        />
       </div>
     </DashboardLayout>
   );
@@ -958,8 +960,15 @@ const ProjectCard = ({
       </div>
 
       <div className="space-y-4">
-        <div className="flex justify-between items-center gap-2">
-          <StatusBadge status={project.status} />
+        <div className="flex justify-between items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <StatusBadge status={project.status} />
+            {project.deadline && project.status !== "terminé" && new Date(project.deadline) < new Date() && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
+                🔴 En retard
+              </span>
+            )}
+          </div>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Calendar className="w-3 h-3" /> {new Date(project.deadline).toLocaleDateString()}
           </div>

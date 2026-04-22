@@ -17,7 +17,6 @@ import { toast } from "sonner";
 const roles = [
   { value: "commercial", label: "Commercial" },
   { value: "developer", label: "Développeur" },
-  { value: "admin", label: "Administrateur" },
 ];
 
 // ─── MCE Logo SVG Component ──────────────────────────────────────────────
