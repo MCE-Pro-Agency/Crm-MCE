@@ -100,12 +100,12 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
   const userRole = profile?.role || null;
   const isAdmin = isAdminRole(userRole);
 
-  // ── Ne filtrer les items admin QUE quand le profil est chargé ─────────────
-  // Pendant le chargement on affiche tous les items non-admin
-  // pour éviter que les sections "sautent" une fois le rôle connu
-  const filteredNavItems = loading
-    ? navItems.filter((item) => !item.adminOnly)
-    : navItems.filter((item) => !item.adminOnly || isAdmin);
+  // ── Filtrage nav : on attend que le profil soit chargé avant de masquer
+  // les items admin. Si profile est null (encore en chargement), on les
+  // affiche par défaut — ils seront masqués si l'user n'est pas admin.
+  const filteredNavItems = navItems.filter(
+    (item) => !item.adminOnly || isAdmin || profile === null
+  );
 
   const handleNotificationRedirect = (projectId: string) => {
     navigate(`/dashboard/projects?open=${projectId}`);
