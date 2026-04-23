@@ -54,9 +54,7 @@ export const Footer = () => {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00AEEF] via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
-                <MCELogoFooter size={28} />
-              </div>
+              <img src="/mce-logo.png" className="w-16 h-16 object-contain" alt="MCE" />
               <div>
                 <h3 className="text-xl font-bold tracking-tight">MCE</h3>
                 <p className="text-xs text-slate-400">Agency</p>

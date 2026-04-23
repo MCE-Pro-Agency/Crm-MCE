@@ -136,9 +136,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
           <Link to="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
-              <MCELogo size={24} />
-            </div>
+            <img src="/mce-logo.png" className="w-10 h-10 object-contain rounded-xl" alt="MCE" />
             {!collapsed && (
               <div className="flex flex-col items-start">
                 <span className="text-sm font-bold tracking-tight text-sidebar-foreground">MCE</span>

@@ -104,6 +104,7 @@ const formatDate = (raw: string | null | undefined): string => {
 
 // ─── Helper : générer un PDF via la Print API du navigateur ──────────────────
 const handlePrintPDF = (quote: Quote) => {
+  const logoUrl = `${window.location.origin}/mce-logo.png`;
   const statusLabels: Record<string, string> = {
     draft: "Brouillon",
     envoye: "Envoyé",
@@ -161,31 +162,9 @@ const handlePrintPDF = (quote: Quote) => {
     <body>
       <div class="header">
         <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#00AEEF,#0A6EBD);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-              <circle cx="20" cy="4"  r="1.6" fill="white"/><circle cx="26" cy="5"  r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="32" cy="9"  r="1.6" fill="white"/><circle cx="36" cy="15" r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="38" cy="20" r="1.6" fill="white"/><circle cx="36" cy="25" r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="32" cy="31" r="1.6" fill="white"/><circle cx="26" cy="35" r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="20" cy="36" r="1.6" fill="white"/><circle cx="14" cy="35" r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="8"  cy="31" r="1.6" fill="white"/><circle cx="4"  cy="25" r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="2"  cy="20" r="1.6" fill="white"/><circle cx="4"  cy="15" r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="8"  cy="9"  r="1.6" fill="white"/><circle cx="14" cy="5"  r="1.6" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="20" cy="10" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="27" cy="13" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="30" cy="20" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="27" cy="27" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="20" cy="30" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="13" cy="27" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="10" cy="20" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="13" cy="13" r="1.2" fill="rgba(255,255,255,0.8)"/>
-              <circle cx="20" cy="20" r="1.8" fill="white"/>
-              <text x="20" y="23" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#0A6EBD" font-family="sans-serif">MCE</text>
-            </svg>
-          </div>
-          <div>
-            <div class="company">MCE <span style="color:#0A6EBD;font-weight:400;">Agency</span></div>
-            <div style="color:#64748b;margin-top:4px;font-size:11px;">mceproagency@gmail.com · +221 78 183 99 73</div>
+          <img src="${logoUrl}" style="height:72px;width:auto;object-fit:contain;" alt="MCE" />
+          <div style="color:#64748b;font-size:11px;line-height:1.8;">
+            mceproagency@gmail.com · +221 78 183 99 73
           </div>
         </div>
         <div style="text-align:right;">

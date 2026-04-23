@@ -156,27 +156,9 @@ const InvoiceDocument = ({ inv }: { inv: Invoice }) => {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 10,
-            background: "linear-gradient(135deg,#00AEEF,#0A6EBD)",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>
-            <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-              {([[20,4],[26,5],[32,9],[36,15],[38,20],[36,25],[32,31],[26,35],[20,36],[14,35],[8,31],[4,25],[2,20],[4,15],[8,9],[14,5]] as [number,number][]).map(([cx,cy],i) => (
-                <circle key={i} cx={cx} cy={cy} r={1.6} fill={i%3===0?"#fff":"rgba(255,255,255,0.6)"} />
-              ))}
-              {([[20,10],[27,13],[30,20],[27,27],[20,30],[13,27],[10,20],[13,13]] as [number,number][]).map(([cx,cy],i) => (
-                <circle key={`i${i}`} cx={cx} cy={cy} r={1.2} fill="rgba(255,255,255,0.8)" />
-              ))}
-              <circle cx={20} cy={20} r={1.8} fill="white" />
-              <text x="20" y="23" textAnchor="middle" fontSize="6.5" fontWeight="bold" fill="#0A6EBD" fontFamily="sans-serif">MCE</text>
-            </svg>
-          </div>
+          <img src="/mce-logo.png" alt="MCE" style={{ height: 72, width: "auto", objectFit: "contain" }} />
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#0A1F44" }}>
-              MCE <span style={{ color: "#00AEEF", fontWeight: 400 }}>Agency</span>
-            </div>
-            <div style={{ fontSize: 11, color: "#999", marginTop: 4, lineHeight: 1.8 }}>
+            <div style={{ fontSize: 11, color: "#999", lineHeight: 1.8 }}>
               Dakar, Sénégal<br />
               mceproagency@gmail.com | +221 78 183 99 73
             </div>

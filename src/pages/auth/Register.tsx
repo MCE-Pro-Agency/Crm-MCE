@@ -68,8 +68,8 @@ const MCEAgencySection = () => (
           <div className="absolute inset-0 bg-gradient-to-r from-[#00AEEF] to-cyan-400 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
           
           {/* Logo box */}
-          <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl border border-white/30 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
-            <MCELogoBeautiful size={56} />
+          <div className="relative w-32 h-32 rounded-3xl bg-white/90 backdrop-blur-xl border border-white/30 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500 p-2">
+            <img src="/mce-logo.png" className="w-full h-full object-contain" alt="MCE" />
           </div>
         </div>
       </div>
