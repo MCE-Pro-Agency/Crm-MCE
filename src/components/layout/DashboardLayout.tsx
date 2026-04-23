@@ -208,16 +208,25 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
         {/* Header */}
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 z-30 shadow-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <Link to="/dashboard" className="flex items-center gap-2.5">
+              <img src="/mce-logo.png" className="h-9 w-auto object-contain" alt="MCE" />
+              <div className="hidden sm:flex flex-col leading-tight">
+                <span className="text-sm font-bold text-foreground">MCE Agency</span>
+                <span className="text-[10px] text-muted-foreground">Management Communication Event</span>
+              </div>
+            </Link>
+          </div>
 
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-4">
             {/* Notifications */}
             {!loading && profile?.id && (
               <NotificationHeader
