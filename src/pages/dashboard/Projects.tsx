@@ -140,11 +140,10 @@ const Projects = () => {
     if (profs) setAvailableProfiles(profs);
     if (profError) console.error("Erreur Profils:", profError.message);
 
-    // Charge tous les clients — on accepte les deux casses stockées en DB ('Confirmé' / 'confirmé')
     const { data: cls, error: clsError } = await supabase
       .from('clients')
       .select('id, first_name, last_name, status')
-      .in('status', ['Confirmé', 'confirmé']);
+      .order('first_name', { ascending: true });
     if (cls) setConfirmedClients(cls);
     if (clsError) console.error("Erreur Clients:", clsError.message);
 

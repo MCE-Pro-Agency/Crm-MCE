@@ -372,6 +372,8 @@ export default function Invoices() {
   const [selectedCountry, setSelectedCountry] = useState("all");
 
   const [downloading, setDownloading] = useState(false);
+  const [generalDocs, setGeneralDocs] = useState<{ name: string; url: string }[]>([]);
+  const [uploadingGeneral, setUploadingGeneral] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   // ── Recherche client pour le formulaire ───────────────────────────────────
@@ -668,6 +670,51 @@ const handleDownloadPDF = async () => {
     toast.success("Document supprimé");
   };
 
+  // ── Documents généraux (indépendants d'une facture) ──────────────────────
+  const loadGeneralInvoiceDocs = async () => {
+    const { data } = await supabase.storage
+      .from("quote-invoice-files")
+      .list("invoices/general", { limit: 100, sortBy: { column: "name", order: "asc" } });
+    if (data) {
+      setGeneralDocs(
+        data
+          .filter((f) => f.name !== ".emptyFolderPlaceholder")
+          .map((f) => ({
+            name: f.name,
+            url: supabase.storage
+              .from("quote-invoice-files")
+              .getPublicUrl(`invoices/general/${f.name}`).data.publicUrl,
+          }))
+      );
+    }
+  };
+
+  useEffect(() => {
+    loadGeneralInvoiceDocs();
+  }, []);
+
+  const handleUploadGeneralInvoiceDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    setUploadingGeneral(true);
+    const file = e.target.files[0];
+    const filePath = `invoices/general/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("quote-invoice-files").upload(filePath, file);
+    if (error) {
+      toast.error("Erreur upload : " + error.message);
+    } else {
+      toast.success("Document importé");
+      await loadGeneralInvoiceDocs();
+    }
+    setUploadingGeneral(false);
+    e.target.value = "";
+  };
+
+  const handleDeleteGeneralInvoiceDoc = async (name: string) => {
+    await supabase.storage.from("quote-invoice-files").remove([`invoices/general/${name}`]);
+    setGeneralDocs((prev) => prev.filter((d) => d.name !== name));
+    toast.success("Document supprimé");
+  };
+
   const updateLine = (i: number, field: keyof InvoiceLine, value: string | number) => {
     setEditLines((prev) =>
       prev.map((l, idx) =>
@@ -778,6 +825,19 @@ const handleDownloadPDF = async () => {
             <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-xs sm:text-sm">
               <HistoryIcon className="w-4 h-4" /> <span className="hidden sm:inline">Historique</span><span className="sm:hidden">Hist.</span>
             </Button>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                className="hidden"
+                onChange={handleUploadGeneralInvoiceDoc}
+                disabled={uploadingGeneral}
+              />
+              <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors ${uploadingGeneral ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">{uploadingGeneral ? "Import..." : "Importer"}</span>
+              </span>
+            </label>
             <Button onClick={() => handleOpenModal()} className="gap-2 bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4" /> Nouvelle facture
             </Button>
@@ -849,6 +909,61 @@ const handleDownloadPDF = async () => {
         ) : (
           <DataTable columns={columns} data={filtered} emptyMessage="Aucune facture trouvée." />
         )}
+
+        {/* DOCUMENTS GÉNÉRAUX IMPORTÉS */}
+        <div className="bg-white border rounded-lg p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Paperclip className="w-4 h-4 text-muted-foreground" />
+              Documents importés — Factures passées
+              <span className="text-xs text-muted-foreground font-normal">({generalDocs.length})</span>
+            </h2>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                className="hidden"
+                onChange={handleUploadGeneralInvoiceDoc}
+                disabled={uploadingGeneral}
+              />
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors ${uploadingGeneral ? "opacity-60 cursor-not-allowed" : ""}`}>
+                <Upload className="w-3.5 h-3.5" />
+                {uploadingGeneral ? "Import en cours..." : "Importer un document"}
+              </span>
+            </label>
+          </div>
+
+          {generalDocs.length === 0 ? (
+            <div className="border-2 border-dashed border-muted rounded-lg py-10 text-center">
+              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+              <p className="text-sm text-muted-foreground">
+                Aucun document importé. Cliquez sur "Importer un document" pour ajouter une facture PDF passée.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {generalDocs.map((doc) => {
+                const displayName = decodeURIComponent(doc.name).replace(/^\d+-/, "");
+                return (
+                  <div key={doc.name} className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors group">
+                    <a href={doc.url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-sm font-medium truncate group-hover:text-primary transition-colors">{displayName}</span>
+                    </a>
+                    <button
+                      onClick={() => handleDeleteGeneralInvoiceDoc(doc.name)}
+                      className="text-destructive hover:bg-destructive/10 rounded p-1 shrink-0 ml-2"
+                    >
+                      <XIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Modal : Edit/Create Invoice */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
