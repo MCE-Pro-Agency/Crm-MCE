@@ -93,7 +93,9 @@ export const Hero = () => {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between px-6 lg:px-12 py-6">
         <div className="flex items-center gap-3">
-          <MCEGlobeLogo />
+          <div className="w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center p-1 shadow-md">
+            <img src="/mce-logo.png" className="w-full h-full object-contain" alt="MCE" />
+          </div>
           <span
             className="text-xl font-bold text-white tracking-wide"
             style={{ fontFamily: "'Segoe UI', sans-serif", letterSpacing: "0.05em" }}
@@ -165,7 +167,7 @@ export const Hero = () => {
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </button>
             </Link>
-            <a href="#showcase">
+            <a href="https://portfolio.mce-pro.agency/" target="_blank" rel="noreferrer">
               <button
                 className="flex items-center gap-2 bg-transparent border-2 border-white/30 hover:border-[#00AEEF] text-white font-semibold px-8 py-4 rounded-2xl text-lg transition-all duration-300 hover:scale-105 backdrop-blur-sm"
               >
