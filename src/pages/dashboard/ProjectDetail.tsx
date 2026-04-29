@@ -195,17 +195,25 @@ const ProjectDetail = () => {
     }
 
     // Parse @mentions and notify tagged profiles
+    const text = commentText.trim();
+    console.log("[Comments] allProfiles loaded:", allProfiles.length, "| text:", text);
     for (const p of allProfiles) {
       if (p.id === userProfile.id) continue;
       const fullMention = `@${p.first_name} ${p.last_name}`;
-      if (commentText.includes(fullMention)) {
-        await supabase.from("notifications").insert({
+      console.log("[Comments] checking mention:", fullMention, "| found:", text.includes(fullMention));
+      if (text.includes(fullMention)) {
+        const { error: notifError } = await supabase.from("notifications").insert({
           profile_id: p.id,
           title: "Vous avez été mentionné",
           message: `${userProfile.first_name} ${userProfile.last_name} vous a mentionné dans le projet "${project.name}"`,
           project_id: project.id,
-          is_read: false,
         });
+        if (notifError) {
+          console.error("[Comments] notification insert error:", notifError);
+          toast.error("Erreur notification : " + notifError.message);
+        } else {
+          console.log("[Comments] notification sent to:", fullMention);
+        }
       }
     }
 
