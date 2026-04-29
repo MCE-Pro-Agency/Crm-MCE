@@ -203,6 +203,8 @@ const Projects = () => {
     country: "Sénégal"
   });
 
+  const [formErrors, setFormErrors] = useState<{ name?: string; client?: string }>({});
+
   const filteredProjects = projects.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          p.client_name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -292,6 +294,30 @@ const Projects = () => {
       toast.error("Accès refusé.");
       return;
     }
+
+    // ── Validation avec messages inline ──────────────────────────────────────
+    const errors: { name?: string; client?: string } = {};
+
+    if (!formData.name.trim()) {
+      errors.name = "Le nom du projet est obligatoire.";
+    }
+
+    const clientFilled = isManualEntry
+      ? !!formData.client_name.trim()
+      : !!selectedClientId;
+
+    if (!clientFilled) {
+      errors.client = isManualEntry
+        ? "Veuillez saisir le nom du client."
+        : "Veuillez sélectionner un client.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setFormErrors({});
 
     setUploading(true);
 
@@ -435,6 +461,7 @@ const Projects = () => {
     setSelectedClientId("");
     setSelectedFiles([]);
     setIsManualEntry(false);
+    setFormErrors({});
     setFormData({
       name: "", client_name: "", deadline: "", status: "en_attente",
       created_at: new Date().toISOString().split('T')[0],
@@ -569,8 +596,14 @@ const Projects = () => {
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-1 sm:col-span-2 space-y-2">
-                <Label className="text-sm">Nom du projet</Label>
-                <Input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-10" />
+                <Label className="text-sm">Nom du projet <span className="text-destructive">*</span></Label>
+                <Input
+                  value={formData.name}
+                  onChange={e => { setFormData({...formData, name: e.target.value}); setFormErrors(prev => ({ ...prev, name: undefined })); }}
+                  className={`h-10 ${formErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  placeholder="Ex: Site e-commerce Teranga"
+                />
+                {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -587,12 +620,17 @@ const Projects = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm">{isManualEntry ? "Client" : "Client lié"}</Label>
+                <Label className="text-sm">{isManualEntry ? "Client" : "Client lié"} <span className="text-destructive">*</span></Label>
                 {isManualEntry ? (
-                  <Input required value={formData.client_name} onChange={e => setFormData({...formData, client_name: e.target.value})} className="h-10" />
+                  <Input
+                    value={formData.client_name}
+                    onChange={e => { setFormData({...formData, client_name: e.target.value}); setFormErrors(prev => ({ ...prev, client: undefined })); }}
+                    className={`h-10 ${formErrors.client ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    placeholder="Nom du client"
+                  />
                 ) : (
-                  <Select onValueChange={setSelectedClientId} value={selectedClientId}>
-                    <SelectTrigger className="h-10"><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                  <Select onValueChange={v => { setSelectedClientId(v); setFormErrors(prev => ({ ...prev, client: undefined })); }} value={selectedClientId}>
+                    <SelectTrigger className={`h-10 ${formErrors.client ? "border-destructive" : ""}`}><SelectValue placeholder="Choisir..." /></SelectTrigger>
                     <SelectContent>
                       {confirmedClients.map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>
@@ -600,6 +638,7 @@ const Projects = () => {
                     </SelectContent>
                   </Select>
                 )}
+                {formErrors.client && <p className="text-xs text-destructive">{formErrors.client}</p>}
               </div>
 
               <div className="space-y-2">
