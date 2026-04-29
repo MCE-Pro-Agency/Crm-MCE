@@ -88,6 +88,8 @@ interface Quote {
   created_by?: string;
   country?: string;
   attachments?: string[];
+  _isImported?: boolean;
+  _docUrl?: string;
 }
 
 // ─── Helper : formater une date ISO en DD/MM/YYYY ─────────────────────────────
@@ -295,12 +297,31 @@ const Quotes = () => {
     fetchQuotes();
   }, [countryFilter]);
 
-  // ── Filtre texte ───────────────────────────────────────────────────────────
-  const filteredQuotes = quotes.filter(
-    (q) =>
-      q.number.toLowerCase().includes(search.toLowerCase()) ||
-      q.client_name.toLowerCase().includes(search.toLowerCase())
-  );
+  // ── Filtre texte + fusion avec documents importés ─────────────────────────
+  const importedRows: Quote[] = generalDocs.map((doc, idx) => ({
+    id: `imported-${idx}-${doc.name}`,
+    number: decodeURIComponent(doc.name).replace(/^\d+-/, ""),
+    client_name: "",
+    created_at: "",
+    expiration_date: "",
+    status: "draft" as QuoteStatus,
+    total_amount: 0,
+    tax_amount: 0,
+    amount_excluding_tax: 0,
+    _isImported: true,
+    _docUrl: doc.url,
+  }));
+
+  const filteredQuotes = [
+    ...quotes.filter(
+      (q) =>
+        q.number.toLowerCase().includes(search.toLowerCase()) ||
+        q.client_name.toLowerCase().includes(search.toLowerCase())
+    ),
+    ...importedRows.filter((d) =>
+      d.number.toLowerCase().includes(search.toLowerCase())
+    ),
+  ];
 
   // ── Créer un devis ─────────────────────────────────────────────────────────
   const handleCreateQuote = async () => {
@@ -548,7 +569,13 @@ const Quotes = () => {
     {
       key: "number",
       header: "Numéro",
-      render: (quote) => (
+      render: (quote) => quote._isImported ? (
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+          <span className="font-medium text-sm truncate max-w-[180px]">{quote.number}</span>
+          <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium whitespace-nowrap">Importé</span>
+        </div>
+      ) : (
         <span className="font-semibold text-primary">{quote.number}</span>
       ),
     },
@@ -556,27 +583,27 @@ const Quotes = () => {
       key: "created_at",
       header: "Date de création",
       render: (quote) => (
-        <span className="text-sm">{formatDate(quote.created_at)}</span>
+        <span className="text-sm">{quote._isImported ? "—" : formatDate(quote.created_at)}</span>
       ),
     },
     {
       key: "client_name",
       header: "Client",
-      render: (quote) => <span className="text-sm">{quote.client_name}</span>,
+      render: (quote) => <span className="text-sm">{quote._isImported ? "—" : quote.client_name}</span>,
     },
     {
       key: "website_url",
       header: "Site Web",
       render: (quote) => (
         <span className="text-sm text-muted-foreground">
-          {quote.website_url || "-"}
+          {quote._isImported ? "—" : (quote.website_url || "-")}
         </span>
       ),
     },
     {
       key: "salesperson_name",
       header: "Vendeur",
-      render: (quote) => (
+      render: (quote) => quote._isImported ? <span className="text-sm text-muted-foreground">—</span> : (
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
             {quote.salesperson_name?.charAt(0) || "M"}
@@ -588,10 +615,8 @@ const Quotes = () => {
     {
       key: "description",
       header: "Activités",
-      render: () => (
-        <button className="text-muted-foreground hover:text-foreground transition">
-          ○
-        </button>
+      render: (quote) => quote._isImported ? null : (
+        <button className="text-muted-foreground hover:text-foreground transition">○</button>
       ),
     },
     {
@@ -599,19 +624,35 @@ const Quotes = () => {
       header: "Total",
       render: (quote) => (
         <span className="font-semibold">
-          {(quote.total_amount || 0).toLocaleString("fr-FR")} CFA
+          {quote._isImported ? "—" : `${(quote.total_amount || 0).toLocaleString("fr-FR")} CFA`}
         </span>
       ),
     },
     {
       key: "status",
       header: "Statut",
-      render: (quote) => <StatusBadge status={quote.status} />,
+      render: (quote) => quote._isImported ? (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+          <Paperclip className="w-3 h-3" /> Document
+        </span>
+      ) : <StatusBadge status={quote.status} />,
     },
     {
       key: "actions",
       header: "",
-      render: (quote) => (
+      render: (quote) => quote._isImported ? (
+        <div className="flex items-center gap-1">
+          <a href={quote._docUrl} target="_blank" rel="noreferrer">
+            <Button variant="ghost" size="icon" title="Ouvrir">
+              <Eye className="w-4 h-4" />
+            </Button>
+          </a>
+          <Button variant="ghost" size="icon" title="Supprimer"
+            onClick={(e) => { e.stopPropagation(); handleDeleteGeneralDoc(quote.id.replace(/^imported-\d+-/, "")); }}>
+            <X className="w-4 h-4 text-destructive" />
+          </Button>
+        </div>
+      ) : (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -851,71 +892,20 @@ const Quotes = () => {
             </div>
           </div>
 
-          {/* TABLEAU DES DEVIS */}
+          {/* TABLEAU DES DEVIS + DOCUMENTS IMPORTÉS */}
           <DataTable
             columns={columns}
             data={filteredQuotes}
             isLoading={isLoading}
             emptyMessage="Aucun devis trouvé"
-            onRowClick={(quote) => setSelectedQuote(quote)}
+            onRowClick={(quote) => {
+              if (quote._isImported && quote._docUrl) {
+                window.open(quote._docUrl, "_blank");
+              } else {
+                setSelectedQuote(quote);
+              }
+            }}
           />
-
-          {/* DOCUMENTS GÉNÉRAUX IMPORTÉS */}
-          <div className="bg-white border rounded-lg p-5 mt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold flex items-center gap-2">
-                <Paperclip className="w-4 h-4 text-muted-foreground" />
-                Documents importés — Devis passés
-                <span className="text-xs text-muted-foreground font-normal">({generalDocs.length})</span>
-              </h2>
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                  className="hidden"
-                  onChange={handleUploadGeneralDoc}
-                  disabled={uploadingGeneral}
-                />
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors ${uploadingGeneral ? "opacity-60 cursor-not-allowed" : ""}`}>
-                  <Upload className="w-3.5 h-3.5" />
-                  {uploadingGeneral ? "Import en cours..." : "Importer un document"}
-                </span>
-              </label>
-            </div>
-
-            {generalDocs.length === 0 ? (
-              <div className="border-2 border-dashed border-muted rounded-lg py-10 text-center">
-                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
-                <p className="text-sm text-muted-foreground">
-                  Aucun document importé. Cliquez sur "Importer un document" pour ajouter un devis PDF passé.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {generalDocs.map((doc) => {
-                  const displayName = decodeURIComponent(doc.name).replace(/^\d+-/, "");
-                  return (
-                    <div key={doc.name} className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors group">
-                      <a href={doc.url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                          <FileText className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm font-medium truncate group-hover:text-primary transition-colors">{displayName}</span>
-                      </a>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
-                        onClick={() => handleDeleteGeneralDoc(doc.name)}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* DÉTAIL DU DEVIS SÉLECTIONNÉ */}

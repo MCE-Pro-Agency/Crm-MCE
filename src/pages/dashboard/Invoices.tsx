@@ -76,6 +76,8 @@ interface Invoice {
   updated_at?: string;
   lines?: InvoiceLine[];
   attachments?: string[];
+  _isImported?: boolean;
+  _docUrl?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -433,14 +435,35 @@ export default function Invoices() {
   }, []);
 
   // ─── Filtered data ──
-  const filtered = invoices.filter((inv) => {
-    const searchMatch =
-      inv.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inv.num.toLowerCase().includes(searchQuery.toLowerCase());
-    const statusMatch = selectedStatus === "all" || inv.status === selectedStatus;
-    const countryMatch = selectedCountry === "all" || inv.country?.toLowerCase() === selectedCountry.toLowerCase();
-    return searchMatch && statusMatch && countryMatch;
-  });
+  const importedInvoiceRows: Invoice[] = generalDocs.map((doc, idx) => ({
+    id: `imported-${idx}-${doc.name}`,
+    num: decodeURIComponent(doc.name).replace(/^\d+-/, ""),
+    client: "—",
+    avatar: "—",
+    av: "av-blue",
+    date: "",
+    due: "",
+    amount: 0,
+    status: "draft" as InvoiceStatus,
+    notes: "",
+    country: "",
+    _isImported: true,
+    _docUrl: doc.url,
+  }));
+
+  const filtered = [
+    ...invoices.filter((inv) => {
+      const searchMatch =
+        inv.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        inv.num.toLowerCase().includes(searchQuery.toLowerCase());
+      const statusMatch = selectedStatus === "all" || inv.status === selectedStatus;
+      const countryMatch = selectedCountry === "all" || inv.country?.toLowerCase() === selectedCountry.toLowerCase();
+      return searchMatch && statusMatch && countryMatch;
+    }),
+    ...importedInvoiceRows.filter((d) =>
+      d.num.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+  ];
 
   // ─── Stats ──
   const stats = {
@@ -730,18 +753,20 @@ const handleDownloadPDF = async () => {
     {
       key: "num",
       header: "N° Facture",
-      render: (inv) => <span className="font-medium text-[#0A6EBD]">{inv.num}</span>,
+      render: (inv) => inv._isImported ? (
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+          <span className="font-medium text-sm truncate max-w-[180px]">{inv.num}</span>
+          <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium whitespace-nowrap">Importé</span>
+        </div>
+      ) : <span className="font-medium text-[#0A6EBD]">{inv.num}</span>,
     },
     {
       key: "client",
       header: "Client",
-      render: (inv) => (
+      render: (inv) => inv._isImported ? <span className="text-sm text-muted-foreground">—</span> : (
         <div className="flex items-center gap-2">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
-              AV_COLORS[inv.av] || "bg-gray-100"
-            }`}
-          >
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${AV_COLORS[inv.av] || "bg-gray-100"}`}>
             {inv.avatar}
           </div>
           <span className="font-medium">{inv.client}</span>
@@ -751,22 +776,27 @@ const handleDownloadPDF = async () => {
     {
       key: "date",
       header: "Date",
-      render: (inv) => <span className="text-sm">{formatDate(inv.date)}</span>,
+      render: (inv) => <span className="text-sm">{inv._isImported ? "—" : formatDate(inv.date)}</span>,
     },
     {
       key: "due",
       header: "Échéance",
-      render: (inv) => <span className="text-sm">{formatDate(inv.due)}</span>,
+      render: (inv) => <span className="text-sm">{inv._isImported ? "—" : formatDate(inv.due)}</span>,
     },
     {
       key: "amount",
       header: "Montant",
-      render: (inv) => <span className="font-medium">{fmt(inv.amount)}</span>,
+      render: (inv) => <span className="font-medium">{inv._isImported ? "—" : fmt(inv.amount)}</span>,
     },
     {
       key: "status",
       header: "Statut",
       render: (inv) => {
+        if (inv._isImported) return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+            <Paperclip className="w-3 h-3" /> Document
+          </span>
+        );
         const s = STATUS_MAP[inv.status];
         return (
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${s.badge}`}>
@@ -779,7 +809,19 @@ const handleDownloadPDF = async () => {
     {
       key: "actions",
       header: "",
-      render: (inv) => (
+      render: (inv) => inv._isImported ? (
+        <div className="flex items-center gap-1">
+          <a href={inv._docUrl} target="_blank" rel="noreferrer">
+            <Button variant="ghost" size="icon" title="Ouvrir">
+              <Eye className="w-4 h-4" />
+            </Button>
+          </a>
+          <Button variant="ghost" size="icon" title="Supprimer"
+            onClick={(e) => { e.stopPropagation(); handleDeleteGeneralInvoiceDoc(inv.id.replace(/^imported-\d+-/, "")); }}>
+            <XIcon className="w-4 h-4 text-destructive" />
+          </Button>
+        </div>
+      ) : (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -787,12 +829,7 @@ const handleDownloadPDF = async () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => {
-                setSelectedInvoice(inv);
-                setIsDetailsOpen(true);
-              }}
-            >
+            <DropdownMenuItem onClick={() => { setSelectedInvoice(inv); setIsDetailsOpen(true); }}>
               <Eye className="w-4 h-4 mr-2" /> Voir détails
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleOpenModal(inv)}>
@@ -907,63 +944,20 @@ const handleDownloadPDF = async () => {
             <Loader2 className="animate-spin h-8 w-8 text-teal-600" />
           </div>
         ) : (
-          <DataTable columns={columns} data={filtered} emptyMessage="Aucune facture trouvée." />
+          <DataTable
+            columns={columns}
+            data={filtered}
+            emptyMessage="Aucune facture trouvée."
+            onRowClick={(inv) => {
+              if (inv._isImported && inv._docUrl) {
+                window.open(inv._docUrl, "_blank");
+              } else {
+                setSelectedInvoice(inv);
+                setIsDetailsOpen(true);
+              }
+            }}
+          />
         )}
-
-        {/* DOCUMENTS GÉNÉRAUX IMPORTÉS */}
-        <div className="bg-white border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold flex items-center gap-2">
-              <Paperclip className="w-4 h-4 text-muted-foreground" />
-              Documents importés — Factures passées
-              <span className="text-xs text-muted-foreground font-normal">({generalDocs.length})</span>
-            </h2>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                className="hidden"
-                onChange={handleUploadGeneralInvoiceDoc}
-                disabled={uploadingGeneral}
-              />
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors ${uploadingGeneral ? "opacity-60 cursor-not-allowed" : ""}`}>
-                <Upload className="w-3.5 h-3.5" />
-                {uploadingGeneral ? "Import en cours..." : "Importer un document"}
-              </span>
-            </label>
-          </div>
-
-          {generalDocs.length === 0 ? (
-            <div className="border-2 border-dashed border-muted rounded-lg py-10 text-center">
-              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
-              <p className="text-sm text-muted-foreground">
-                Aucun document importé. Cliquez sur "Importer un document" pour ajouter une facture PDF passée.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {generalDocs.map((doc) => {
-                const displayName = decodeURIComponent(doc.name).replace(/^\d+-/, "");
-                return (
-                  <div key={doc.name} className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors group">
-                    <a href={doc.url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <span className="text-sm font-medium truncate group-hover:text-primary transition-colors">{displayName}</span>
-                    </a>
-                    <button
-                      onClick={() => handleDeleteGeneralInvoiceDoc(doc.name)}
-                      className="text-destructive hover:bg-destructive/10 rounded p-1 shrink-0 ml-2"
-                    >
-                      <XIcon className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
         {/* Modal : Edit/Create Invoice */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
