@@ -203,7 +203,7 @@ const Projects = () => {
     country: "Sénégal"
   });
 
-  const [formErrors, setFormErrors] = useState<{ name?: string; client?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ name?: string; client?: string; created_at?: string }>({});
 
   const filteredProjects = projects.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -300,6 +300,10 @@ const Projects = () => {
 
     if (!formData.name.trim()) {
       errors.name = "Le nom du projet est obligatoire.";
+    }
+
+    if (!formData.created_at) {
+      errors.created_at = "La date de création est obligatoire.";
     }
 
     const clientFilled = isManualEntry
@@ -642,8 +646,14 @@ const Projects = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm">Date de création</Label>
-                <Input type="date" value={formData.created_at} onChange={e => setFormData({...formData, created_at: e.target.value})} className="h-10" />
+                <Label className="text-sm">Date de création <span className="text-destructive">*</span></Label>
+                <Input
+                  type="date"
+                  value={formData.created_at}
+                  onChange={e => { setFormData({...formData, created_at: e.target.value}); setFormErrors(prev => ({ ...prev, created_at: undefined })); }}
+                  className={`h-10 ${formErrors.created_at ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
+                {formErrors.created_at && <p className="text-xs text-destructive">{formErrors.created_at}</p>}
               </div>
 
               <div className="space-y-2">
