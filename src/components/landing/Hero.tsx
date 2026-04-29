@@ -171,7 +171,7 @@ export const Hero = () => {
               <button
                 className="flex items-center gap-2 bg-transparent border-2 border-white/30 hover:border-[#00AEEF] text-white font-semibold px-8 py-4 rounded-2xl text-lg transition-all duration-300 hover:scale-105 backdrop-blur-sm"
               >
-                Voir nos réalisations
+                Voir notre site
               </button>
             </a>
           </div>
